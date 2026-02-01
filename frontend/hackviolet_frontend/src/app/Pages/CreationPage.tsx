@@ -11,7 +11,7 @@ interface CreationPage {
 function CreationPage({setPage} : CreationPage) {
   return (
     <>
-      <Banner setPage = {setPage} text='Lift Link'></Banner>
+      <Banner setPage = {setPage} text='LiftLink'></Banner>
       <CreationBlock buttonText='Submit' setPage={setPage}></CreationBlock>
     </>
   )

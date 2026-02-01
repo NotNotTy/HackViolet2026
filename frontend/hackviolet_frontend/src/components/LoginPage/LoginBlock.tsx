@@ -38,7 +38,7 @@ function LoginBlock({setPage} : LoginBlock) {
                 <h1 id="signup"> Sign In </h1>
                 {error && <div className="error-message">{error}</div>}
                 <div className="input-group">
-                    <h1> Username </h1>
+                    <h1> Email </h1>
                     <input 
                         id="username" 
                         type="text" 

@@ -14,7 +14,7 @@ interface PostPage {
 function PostPage({setPage} : PostPage) {
   return (
     <>
-      <Banner setPage = {setPage} text='Lift Link'></Banner>
+      <Banner setPage = {setPage} text='LiftLink'></Banner>
       <VerificationBanner />
       <TabbedFeed />
     </>

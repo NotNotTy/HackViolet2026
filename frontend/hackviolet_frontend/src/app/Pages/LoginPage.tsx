@@ -11,7 +11,7 @@ interface LoginPage {
 function LoginPage({setPage} : LoginPage) {
   return (
     <>
-      <Banner setPage = {setPage} text='Lift Link'></Banner>
+      <Banner setPage = {setPage} text='LiftLink'></Banner>
       <LoginBlock setPage={setPage}></LoginBlock>
     </>
   )
