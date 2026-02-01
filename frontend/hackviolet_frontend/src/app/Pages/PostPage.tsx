@@ -1,7 +1,7 @@
 /**
  * PostPage - Main feed with Profiles and Gym Sessions tabs
  */
-import Banner from '../../components/HomePage/Banner.tsx'
+import Banner from '../DefaultBanner/Banner.tsx'
 import TabbedFeed from '../../components/MainFeed/TabbedFeed.tsx'
 import VerificationBanner from '../../components/VerificationBanner/VerificationBanner.tsx'
 import { Page } from '../../types/page.ts'

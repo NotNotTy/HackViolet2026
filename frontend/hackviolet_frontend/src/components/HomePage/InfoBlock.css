@@ -13,12 +13,18 @@
   }
 
 .subpage p {
-  font-size: clamp(3vw, 3vw, 1.25rem);
+  font-size: clamp(2.2vw, 2.2vw, 1.25rem);
+
+  font-style: italic;
   text-align: center;
   max-width: 900px;
   line-height: 1.6;
   color: whitesmoke;
   margin-top: 8px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+             "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+
 }
 
 @media (max-width: 768px) {

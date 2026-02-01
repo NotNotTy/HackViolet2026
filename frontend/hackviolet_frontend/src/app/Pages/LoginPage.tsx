@@ -1,7 +1,7 @@
 /**
  * LoginPage
  */
-import Banner from '../../components/HomePage/Banner.tsx'
+import Banner from '../DefaultBanner/Banner.tsx'
 import LoginBlock from '../../components/LoginPage/LoginBlock.tsx';
 import { Page } from '../../types/page.ts'
 import '../App.css'

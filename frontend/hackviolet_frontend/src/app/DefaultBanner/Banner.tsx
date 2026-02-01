@@ -12,8 +12,8 @@ function Banner({setPage, text} : Banner) {
     
     return (
         <>
-        <div className="banner">
-            <div className="banner-left">
+        <div className="defaultbanner">
+            <div className="defaultbanner-left">
             <button onClick={() => setPage(Page.Home)}>
                     <h2>{text}</h2>
                     <img src={logo} alt="Company Logo"></img>
@@ -22,13 +22,13 @@ function Banner({setPage, text} : Banner) {
 
                 
             
-            <div className="banner-center">
+            <div className="defaultbanner-center">
                
             </div>
-            <div className="banner-right">
+            <div className="defaultbanner-right">
                 {isLoggedIn && (
                     <button 
-                        className="profile-button"
+                        className="defaultprofile-button"
                         onClick={() => setPage(Page.GymInfo)}
                         title="Profile Settings"
                     >

@@ -4,6 +4,7 @@
 import Banner from '../../components/HomePage/Banner.tsx'
 import InfoBlock from '../../components/HomePage/InfoBlock.tsx'
 import Footer from '../../components/HomePage/Footer.tsx'
+import StatBlock from '../../components/HomePage/StatBlock.tsx'
 import { Page } from '../../types/page.ts'
 import '../App.css'
 import MainBlock from '../../components/HomePage/MainBlock.tsx'
@@ -21,7 +22,8 @@ function HomePage({setPage} : HomePage) {
       text='"Your Gym Buddy, One Click Away."'>
 
       </InfoBlock>
-      <Footer text="Tyler Thach, Noah Glorria, Jett Ehlert, Allison Zhan"></Footer>
+      <StatBlock></StatBlock>
+      <Footer text="HackViolet 2026 Submission"></Footer>
     </>
   )
 }

@@ -1,10 +1,14 @@
-.banner {
+.defaultbanner {
   width: 100%;
   height: 64px;
 
+
+  background-color: rgba(255, 255, 255, 0.96); 
+  backdrop-filter: saturate(180%) blur(8px); /* optional, modern */
+
   display: flex;
   align-items: center;
-  justify-content: space-between;   /* 🔥 important */
+  justify-content: space-between;
 
   padding: 0 1.5rem;
   box-sizing: border-box;
@@ -13,61 +17,45 @@
   top: 0;
   left: 0;
   z-index: 1000;
+
+  /* subtle shadow */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-  /* 🔥 DARK OVERLAY */
-  .banner::before {
-    content: "";
-    position: absolute;
-    inset: 0;
   
-    background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.75) 0%,
-      rgba(0, 0, 0, 0.4) 40%,
-      rgba(0, 0, 0, 0) 100%
-    );
-  
-    pointer-events: none;
-  }
-
-/* Make sure content stays above overlay */
-.banner > * {
-  position: relative;
-  z-index: 2;
-}
-  
-  .banner h1 {
+  .defaultbanner h1 {
     font-size: 1.25rem;
     margin: 0;
   }
 
-  .banner h2 {
+  .defaultbanner h2 {
     font-size: 2.0rem;
     margin: 0;
-    color: white;
+    color: black;
   }
 
   @media (max-width: 768px) {
-    .banner {
+    .defaultbanner {
       height: 56px;
       padding: 0 1rem;
     }
     
-    .banner h1, .banner h2 {
+    .defaultbanner h1, .defaultbanner h2 {
       font-size: 1rem;
     }
     
-    .banner-left {
+    .defaultbanner-left {
       width: 64px;
     }
     
-    .banner-right {
+    .defaultbanner-right {
       width: 100px;
       padding-right: 0.5rem;
     }
     
-    .banner img {
+    .defaultbanner img {
       width: 64px;
       height: 64px;
     }
@@ -78,11 +66,11 @@
     }
   }
 
-  .banner header {
+  .defaultbanner header {
     text-align: center;
   }
 
-  .banner-left {
+  .defaultbanner-left {
     display: flex;
     align-items: center;        /* vertical alignment */
     justify-content: flex-start;
@@ -92,7 +80,7 @@
     min-width: max-content;     /* keeps content together */
   }
   
-  .banner-right {
+  .defaultbanner-right {
     width: 120px;
     display: flex;
     align-items: center;
@@ -100,9 +88,9 @@
     padding-right: 1rem;
   }
   
-  .profile-button {
+  .defaultprofile-button {
     background-color: rgba(255, 255, 255, 0.2);
-    color: white;
+    color: black;
     border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0.5rem 1rem;
     border-radius: 6px;
@@ -110,9 +98,10 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    outline: 1.5px solid #9ca3af;
   }
   
-  .profile-button:hover {
+  .defaultprofile-button:hover {
     background-color: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
   }
@@ -124,7 +113,7 @@
   }
 
   /* Logo */
-  .banner img {
+  .defaultbanner img {
     size: 150%;
     width: 64px;
     height: 64px;
@@ -133,7 +122,7 @@
     margin-top: 10px;
   }
 
-  .banner-left button {
+  .defaultbanner-left button {
     display: flex;
     align-items: center;        /* vertical alignment */
     gap: 0.5rem;                /* space between text & logo */
