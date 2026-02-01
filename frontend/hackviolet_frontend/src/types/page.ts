@@ -4,5 +4,6 @@ export enum Page {
     Login = "login",
     CreateAccount = "create account",
     GymInfo = "gym info",
-    PostPage = "post"
+    PostPage = "post",
+    VerifyEmail = "verify email"
   }

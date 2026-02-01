@@ -83,6 +83,37 @@ export const authAPI = {
   },
 };
 
+// Email Verification APIs
+export const verificationAPI = {
+  verifyEmail: async (token: string) => {
+    return apiCall('/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  resendVerification: async () => {
+    return apiCall('/resend-verification', {
+      method: 'POST',
+    });
+  },
+};
+
+// Admin APIs
+export const adminAPI = {
+  resetDatabase: async () => {
+    return apiCall('/reset', {
+      method: 'POST',
+    });
+  },
+
+  seedDatabase: async () => {
+    return apiCall('/seed', {
+      method: 'POST',
+    });
+  },
+};
+
 // Gym Info APIs
 export const gymInfoAPI = {
   saveGymInfo: async (focus: string, experience: string, bio?: string) => {

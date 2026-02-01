@@ -27,7 +27,7 @@ function CreationBlock({buttonText, setPage} : CreationBlock) {
         setLoading(true);
         setError("");
         try {
-            await authAPI.register({
+            const data = await authAPI.register({
                 password,
                 first_name: firstName,
                 last_name: lastName,
@@ -35,6 +35,10 @@ function CreationBlock({buttonText, setPage} : CreationBlock) {
                 gender: gender || undefined,
                 age: age || undefined,
             });
+            // Show verification message if email was sent
+            if (data.email_sent) {
+                alert("Account created! Please check your email to verify your account before accessing all features.");
+            }
             // Navigate to main feed after successful registration
             setPage(Page.PostPage);
         } catch (err: any) {

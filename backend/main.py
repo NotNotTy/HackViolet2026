@@ -1,8 +1,16 @@
 from flask import Flask, request, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import uuid
+import smtplib
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -30,6 +38,10 @@ def after_request(response):
 @app.route('/api/posts/<path:path>/request', methods=['OPTIONS'])
 @app.route('/api/requests', methods=['OPTIONS'])
 @app.route('/api/requests/<path:path>/respond', methods=['OPTIONS'])
+@app.route('/api/verify-email', methods=['OPTIONS'])
+@app.route('/api/resend-verification', methods=['OPTIONS'])
+@app.route('/api/reset', methods=['OPTIONS'])
+@app.route('/api/seed', methods=['OPTIONS'])
 def options_handler(path=None):
     return jsonify({}), 200
 
@@ -39,6 +51,12 @@ user_sessions: Dict[str, str] = {}  # token -> user_id
 gym_info: Dict[str, Dict] = {}  # user_id -> gym preferences
 posts: List[Dict] = []  # List of all posts/sessions
 interest_requests: List[Dict] = []  # List of interest requests
+verification_tokens: Dict[str, Dict] = {}  # token -> {user_id, email, created_at}
+
+# Email configuration (from environment variables)
+GMAIL_USER = os.getenv('GMAIL_USER', '')
+GMAIL_PASSWORD = os.getenv('GMAIL_PASSWORD', '')  # Use Gmail App Password
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 def hash_password(password: str) -> str:
     """Simple password hashing (use bcrypt in production)"""
@@ -47,6 +65,71 @@ def hash_password(password: str) -> str:
 def generate_token() -> str:
     """Generate a simple session token"""
     return str(uuid.uuid4())
+
+def generate_verification_token() -> str:
+    """Generate a verification token"""
+    return str(uuid.uuid4())
+
+def send_verification_email(email: str, token: str, first_name: str) -> bool:
+    """Send verification email using Gmail SMTP"""
+    if not GMAIL_USER or not GMAIL_PASSWORD:
+        print("WARNING: Gmail credentials not configured. Email verification disabled.")
+        return False
+    
+    try:
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Verify your LiftLink account'
+        msg['From'] = GMAIL_USER
+        msg['To'] = email
+        
+        # Create verification link
+        verification_link = f"{FRONTEND_URL}/verify-email?token={token}"
+        
+        # Create email body
+        text = f"""
+        Hi {first_name},
+        
+        Welcome to LiftLink! Please verify your email address by clicking the link below:
+        
+        {verification_link}
+        
+        If you didn't create an account, please ignore this email.
+        
+        Best regards,
+        The LiftLink Team
+        """
+        
+        html = f"""
+        <html>
+          <body>
+            <h2>Hi {first_name},</h2>
+            <p>Welcome to LiftLink! Please verify your email address by clicking the button below:</p>
+            <p><a href="{verification_link}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email</a></p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p>{verification_link}</p>
+            <p>If you didn't create an account, please ignore this email.</p>
+            <p>Best regards,<br>The LiftLink Team</p>
+          </body>
+        </html>
+        """
+        
+        # Attach parts
+        part1 = MIMEText(text, 'plain')
+        part2 = MIMEText(html, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Send email
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(GMAIL_USER, GMAIL_PASSWORD)
+            server.send_message(msg)
+        
+        return True
+    except Exception as e:
+        print(f"Error sending verification email: {str(e)}")
+        return False
 
 # ==================== AUTHENTICATION ENDPOINTS ====================
 
@@ -70,15 +153,18 @@ def register():
         if not all([password, first_name, last_name, email]):
             return jsonify({'error': 'Missing required fields: email, password, first name, and last name are required'}), 400
         
+        # Normalize email (lowercase, strip whitespace)
+        email = email.lower().strip()
+        
         # Validate email is .edu domain
         if not email.endswith('.edu'):
             return jsonify({'error': 'Please use a valid .edu email address'}), 400
         
-        # Check if user already exists
+        # Check if user already exists (case-insensitive)
         if email in emails:
             return jsonify({'error': 'Account already exists'}), 409
         
-        # Create user
+        # Create user (unverified by default)
         user_id = str(uuid.uuid4())
         emails[email] = {
             'id': user_id,
@@ -88,18 +174,32 @@ def register():
             'email': email,
             'gender': gender,
             'age': age,
+            'verified': False,  # Email not verified yet
             'created_at': datetime.now().isoformat()
         }
         
-        # Generate session token
+        # Generate verification token
+        verification_token = generate_verification_token()
+        verification_tokens[verification_token] = {
+            'user_id': user_id,
+            'email': email,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Send verification email
+        email_sent = send_verification_email(email, verification_token, first_name)
+        
+        # Generate session token (user can login but may have limited access)
         token = generate_token()
         user_sessions[token] = user_id
         
         return jsonify({
-            'message': 'User registered successfully',
+            'message': 'User registered successfully. Please check your email to verify your account.',
             'token': token,
             'user_id': user_id,
-            'email': email
+            'email': email,
+            'verified': False,
+            'email_sent': email_sent
         }), 201
         
     except Exception as e:
@@ -120,11 +220,21 @@ def login():
         if not email_input or not password:
             return jsonify({'error': 'Email and password required'}), 400
         
-        # Check if email exists
-        if email_input not in emails:
+        # Normalize email (lowercase) for lookup
+        email_input_lower = email_input.lower().strip()
+        
+        # Check if email exists (case-insensitive)
+        user_data = None
+        user_email_key = None
+        for email_key in emails.keys():
+            if email_key.lower() == email_input_lower:
+                user_data = emails[email_key]
+                user_email_key = email_key
+                break
+        
+        if not user_data:
             return jsonify({'error': 'Invalid credentials'}), 401
         
-        user_data = emails[email_input]
         password_hash = hash_password(password)
         
         # Verify password
@@ -139,7 +249,8 @@ def login():
             'message': 'Login successful',
             'token': token,
             'user_id': user_data['id'],
-            'email': email_input
+            'email': user_email_key or email_input,  # Use the actual email key from storage
+            'verified': user_data.get('verified', False)  # Include verification status
         }), 200
         
     except Exception as e:
@@ -153,6 +264,144 @@ def logout():
         if token and token in user_sessions:
             del user_sessions[token]
         return jsonify({'message': 'Logged out successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verify-email', methods=['GET'])
+def check_verification_status():
+    """Check verification status by token (without consuming it)"""
+    try:
+        token = request.args.get('token')
+        
+        if not token:
+            return jsonify({'error': 'Verification token required'}), 400
+        
+        # Check if token exists
+        if token not in verification_tokens:
+            # Token doesn't exist - check if user might already be verified
+            # We can't determine which user without the token, so just return error
+            return jsonify({
+                'error': 'Invalid or expired verification token',
+                'token_exists': False
+            }), 400
+        
+        verification_data = verification_tokens[token]
+        email = verification_data['email']
+        
+        # Check if user is already verified
+        if email in emails and emails[email].get('verified', False):
+            return jsonify({
+                'message': 'Email already verified',
+                'verified': True,
+                'already_verified': True
+            }), 200
+        
+        return jsonify({
+            'message': 'Token is valid',
+            'verified': False,
+            'token_exists': True
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verify-email', methods=['POST'])
+def verify_email():
+    """Verify user email with token"""
+    try:
+        data = request.json
+        token = data.get('token')
+        
+        if not token:
+            return jsonify({'error': 'Verification token required'}), 400
+        
+        # Check if token exists
+        if token not in verification_tokens:
+            # Token might have been used already - check if user is already verified
+            # Try to find user by checking all users and see if any are verified
+            # But we don't have a way to map token to user without the token...
+            # So we'll just return the error, but make it more helpful
+            return jsonify({'error': 'Invalid or expired verification token. The token may have already been used. If you already verified your email, you can log in normally.'}), 400
+        
+        verification_data = verification_tokens[token]
+        user_id = verification_data['user_id']
+        email = verification_data['email']
+        
+        # Find user and check if already verified
+        if email in emails:
+            if emails[email].get('verified', False):
+                # User already verified - remove token and return success
+                del verification_tokens[token]
+                return jsonify({
+                    'message': 'Email already verified',
+                    'verified': True,
+                    'already_verified': True
+                }), 200
+            
+            # Mark as verified
+            emails[email]['verified'] = True
+            emails[email]['verified_at'] = datetime.now().isoformat()
+        else:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Remove used token
+        del verification_tokens[token]
+        
+        return jsonify({
+            'message': 'Email verified successfully',
+            'verified': True
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/resend-verification', methods=['POST'])
+def resend_verification():
+    """Resend verification email"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Find user
+        user = None
+        user_email = None
+        for email_addr, u in emails.items():
+            if u['id'] == user_id:
+                user = u
+                user_email = email_addr
+                break
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Check if already verified
+        if user.get('verified', False):
+            return jsonify({'error': 'Email already verified'}), 400
+        
+        # Generate new verification token
+        verification_token = generate_verification_token()
+        verification_tokens[verification_token] = {
+            'user_id': user_id,
+            'email': user_email,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Send verification email
+        email_sent = send_verification_email(
+            user_email, 
+            verification_token, 
+            user.get('first_name', 'User')
+        )
+        
+        if not email_sent:
+            return jsonify({'error': 'Failed to send verification email. Please check server configuration.'}), 500
+        
+        return jsonify({
+            'message': 'Verification email sent successfully',
+            'email_sent': True
+        }), 200
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -285,6 +534,16 @@ def get_posts():
         user_id = get_user_from_token()
         if not user_id:
             return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Check if user is verified (PRD requirement: unverified users cannot view posts)
+        current_user = None
+        for u in emails.values():
+            if u['id'] == user_id:
+                current_user = u
+                break
+        
+        if not current_user or not current_user.get('verified', False):
+            return jsonify({'error': 'Please verify your email to view posts'}), 403
         
         # Get filter parameters
         workout_type = request.args.get('workout_type')
@@ -454,6 +713,7 @@ def get_user():
         user['bio'] = user_gym_info.get('bio', '')
         user['focus'] = user_gym_info.get('focus')
         user['experience'] = user_gym_info.get('experience')
+        user['verified'] = user.get('verified', False)  # Include verification status
         
         return jsonify(user), 200
         
@@ -560,6 +820,16 @@ def get_profiles():
         user_id = get_user_from_token()
         if not user_id:
             return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Check if user is verified (PRD requirement: unverified users cannot view profiles)
+        current_user = None
+        for u in emails.values():
+            if u['id'] == user_id:
+                current_user = u
+                break
+        
+        if not current_user or not current_user.get('verified', False):
+            return jsonify({'error': 'Please verify your email to view profiles'}), 403
         
         # Get filter parameters
         gender = request.args.get('gender')
@@ -858,7 +1128,250 @@ def health_check():
         'message': 'LiftLink API is running'
     }), 200
 
+# ==================== ADMIN/DATA MANAGEMENT ====================
+
+@app.route('/api/reset', methods=['POST'])
+def reset_database():
+    """Reset all in-memory data (development only)"""
+    try:
+        global emails, user_sessions, gym_info, posts, interest_requests, verification_tokens
+        
+        # Clear all data
+        emails.clear()
+        user_sessions.clear()
+        gym_info.clear()
+        posts.clear()
+        interest_requests.clear()
+        verification_tokens.clear()
+        
+        return jsonify({
+            'message': 'Database reset successfully',
+            'status': 'cleared'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/reset', methods=['OPTIONS'])
+def reset_options():
+    """Handle OPTIONS for reset endpoint"""
+    return jsonify({}), 200
+
+@app.route('/api/seed', methods=['POST'])
+def seed_database():
+    """Seed database with mock data (development only)"""
+    try:
+        global emails, gym_info, posts, interest_requests
+        
+        # Clear existing data first
+        emails.clear()
+        gym_info.clear()
+        posts.clear()
+        interest_requests.clear()
+        
+        # Mock users
+        mock_users = [
+            {
+                'id': 'user1',
+                'email': 'alice.smith@university.edu',
+                'password_hash': hash_password('password123'),
+                'first_name': 'Alice',
+                'last_name': 'Smith',
+                'gender': 'Female',
+                'age': '20',
+                'verified': True,
+                'created_at': datetime.now().isoformat()
+            },
+            {
+                'id': 'user2',
+                'email': 'bob.jones@university.edu',
+                'password_hash': hash_password('password123'),
+                'first_name': 'Bob',
+                'last_name': 'Jones',
+                'gender': 'Male',
+                'age': '22',
+                'verified': True,
+                'created_at': datetime.now().isoformat()
+            },
+            {
+                'id': 'user3',
+                'email': 'charlie.brown@university.edu',
+                'password_hash': hash_password('password123'),
+                'first_name': 'Charlie',
+                'last_name': 'Brown',
+                'gender': 'Male',
+                'age': '21',
+                'verified': True,
+                'created_at': datetime.now().isoformat()
+            },
+            {
+                'id': 'user4',
+                'email': 'diana.prince@university.edu',
+                'password_hash': hash_password('password123'),
+                'first_name': 'Diana',
+                'last_name': 'Prince',
+                'gender': 'Female',
+                'age': '23',
+                'verified': True,
+                'created_at': datetime.now().isoformat()
+            },
+            {
+                'id': 'user5',
+                'email': 'emma.wilson@university.edu',
+                'password_hash': hash_password('password123'),
+                'first_name': 'Emma',
+                'last_name': 'Wilson',
+                'gender': 'Female',
+                'age': '19',
+                'verified': False,  # Unverified user
+                'created_at': datetime.now().isoformat()
+            },
+        ]
+        
+        # Add users to emails dict
+        for user in mock_users:
+            emails[user['email']] = user
+        
+        # Mock gym info
+        gym_info_data = {
+            'user1': {
+                'user_id': 'user1',
+                'focus': 'Cardio',
+                'experience': 'Beginner',
+                'bio': 'Love running and cycling! Looking for a workout buddy to stay motivated.',
+                'updated_at': datetime.now().isoformat()
+            },
+            'user2': {
+                'user_id': 'user2',
+                'focus': 'Bodybuilding',
+                'experience': 'Advance',
+                'bio': 'Serious lifter, 5 years experience. Looking for a training partner for heavy lifting sessions.',
+                'updated_at': datetime.now().isoformat()
+            },
+            'user3': {
+                'user_id': 'user3',
+                'focus': 'General fitness',
+                'experience': 'Moderate',
+                'bio': 'Just trying to stay active and healthy. Open to any workout type!',
+                'updated_at': datetime.now().isoformat()
+            },
+            'user4': {
+                'user_id': 'user4',
+                'focus': 'Pilates',
+                'experience': 'Expert',
+                'bio': 'Pilates instructor and enthusiast. Happy to help beginners or work out with experienced practitioners.',
+                'updated_at': datetime.now().isoformat()
+            },
+        }
+        
+        for user_id, info in gym_info_data.items():
+            gym_info[user_id] = info
+        
+        # Mock posts
+        now = datetime.now()
+        
+        mock_posts = [
+            {
+                'id': 'post1',
+                'user_id': 'user1',
+                'username': 'alice.smith@university.edu',
+                'title': 'Morning Cardio Session',
+                'workout_type': 'Cardio',
+                'date_time': (now + timedelta(days=1, hours=8)).isoformat(),
+                'location': 'University Recreation Center',
+                'party_size': '2',
+                'experience_level': 'Beginner',
+                'gender_preference': 'Female',
+                'notes': 'Looking for someone to join me for a 5K run around campus!',
+                'created_at': (now - timedelta(hours=2)).isoformat()
+            },
+            {
+                'id': 'post2',
+                'user_id': 'user2',
+                'username': 'bob.jones@university.edu',
+                'title': 'Leg Day - Heavy Squats',
+                'workout_type': 'Weight Training',
+                'date_time': (now + timedelta(days=2, hours=14)).isoformat(),
+                'location': 'Main Gym - Weight Room',
+                'party_size': '1',
+                'experience_level': 'Advance',
+                'gender_preference': None,
+                'notes': 'Need a spotter for heavy squats. Willing to spot in return!',
+                'created_at': (now - timedelta(hours=5)).isoformat()
+            },
+            {
+                'id': 'post3',
+                'user_id': 'user3',
+                'username': 'charlie.brown@university.edu',
+                'title': 'Weekend Workout Group',
+                'workout_type': 'General fitness',
+                'date_time': (now + timedelta(days=3, hours=10)).isoformat(),
+                'location': 'University Recreation Center',
+                'party_size': '4',
+                'experience_level': 'Moderate',
+                'gender_preference': None,
+                'notes': 'Casual workout session, all levels welcome!',
+                'created_at': (now - timedelta(hours=1)).isoformat()
+            },
+            {
+                'id': 'post4',
+                'user_id': 'user4',
+                'username': 'diana.prince@university.edu',
+                'title': 'Pilates Class',
+                'workout_type': 'Pilates',
+                'date_time': (now + timedelta(days=1, hours=18)).isoformat(),
+                'location': 'Yoga Studio - Room 201',
+                'party_size': '3',
+                'experience_level': 'Beginner',
+                'gender_preference': 'Female',
+                'notes': 'Leading a beginner-friendly Pilates session. Bring a mat!',
+                'created_at': (now - timedelta(hours=3)).isoformat()
+            },
+        ]
+        
+        posts.extend(mock_posts)
+        
+        # Mock interest requests
+        mock_requests = [
+            {
+                'id': 'req1',
+                'sender_id': 'user2',
+                'receiver_id': 'user1',
+                'type': 'profile',
+                'status': 'pending',
+                'created_at': (now - timedelta(hours=1)).isoformat()
+            },
+            {
+                'id': 'req2',
+                'sender_id': 'user3',
+                'receiver_id': 'user4',
+                'post_id': 'post4',
+                'type': 'post',
+                'status': 'pending',
+                'created_at': (now - timedelta(minutes=30)).isoformat()
+            },
+        ]
+        
+        interest_requests.extend(mock_requests)
+        
+        return jsonify({
+            'message': 'Database seeded successfully',
+            'users_created': len(mock_users),
+            'posts_created': len(mock_posts),
+            'requests_created': len(mock_requests),
+            'note': 'All users have password: password123'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/seed', methods=['OPTIONS'])
+def seed_options():
+    """Handle OPTIONS for seed endpoint"""
+    return jsonify({}), 200
+
 if __name__ == '__main__':
     print("Starting LiftLink Backend Server...")
     print("API endpoints available at http://localhost:5001/api/")
+    print("⚠️  WARNING: Using in-memory storage. Data will be lost on server restart.")
     app.run(debug=True, port=5001)
