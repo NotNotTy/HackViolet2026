@@ -40,6 +40,10 @@ npm run dev
 
 The frontend will run on `http://localhost:xxxx`
 
+Click on the front end link printed in the terminal
+
+NOTE: some packages may not be installed on your local system (such as npm). Make sure to pip install those packages if missing.
+
 ## Features
 
 ### 1. **HomePage** - Landing page with app information
