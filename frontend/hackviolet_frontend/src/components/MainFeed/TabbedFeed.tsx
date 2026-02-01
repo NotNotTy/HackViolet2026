@@ -14,9 +14,11 @@ interface TabbedFeedProps {
 function TabbedFeed({ refreshTrigger }: TabbedFeedProps) {
     const [activeTab, setActiveTab] = useState<TabType>('sessions');
     const [postRefreshTrigger, setPostRefreshTrigger] = useState(0);
+    const [showPostForm, setShowPostForm] = useState(false);
 
     const handlePostCreated = () => {
         setPostRefreshTrigger(prev => prev + 1);
+        setShowPostForm(false); // Hide form after successful post creation
     };
 
     return (
@@ -53,7 +55,19 @@ function TabbedFeed({ refreshTrigger }: TabbedFeedProps) {
 
                 {activeTab === 'sessions' && (
                     <div className="sessions-tab">
-                        <PostCreation onPostCreated={handlePostCreated} />
+                        <div className="sessions-header">
+                            <button 
+                                className="create-post-button"
+                                onClick={() => setShowPostForm(!showPostForm)}
+                            >
+                                {showPostForm ? '− Hide Form' : '+ Create New Gym Session'}
+                            </button>
+                        </div>
+                        {showPostForm && (
+                            <div className="post-creation-wrapper">
+                                <PostCreation onPostCreated={handlePostCreated} />
+                            </div>
+                        )}
                         <PostList refreshTrigger={postRefreshTrigger} />
                     </div>
                 )}
