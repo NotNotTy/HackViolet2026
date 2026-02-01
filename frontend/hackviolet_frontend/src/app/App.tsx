@@ -16,9 +16,16 @@ function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    // If there's a token in the URL, show verify email page
-    if (token) {
+    // If there's a token in the URL and we haven't already verified, show verify email page
+    // Check sessionStorage to avoid redirecting after successful verification
+    const alreadyVerified = sessionStorage.getItem('email_verified') === 'true';
+    if (token && !alreadyVerified && page === Page.Home) {
       setPage(Page.VerifyEmail);
+    } else if (token && alreadyVerified) {
+      // Token exists but already verified - clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, '', url.toString());
     }
   }, []);
 

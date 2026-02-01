@@ -2,9 +2,10 @@ import { useState } from 'react';
 import ProfilesFeed from '../ProfilesFeed/ProfilesFeed';
 import PostList from '../PostPage/PostList';
 import PostCreation from '../PostPage/PostCreation';
+import RequestsList from '../Requests/RequestsList';
 import './TabbedFeed.css';
 
-type TabType = 'profiles' | 'sessions';
+type TabType = 'profiles' | 'sessions' | 'requests';
 
 interface TabbedFeedProps {
     refreshTrigger?: number;
@@ -34,6 +35,12 @@ function TabbedFeed({ refreshTrigger }: TabbedFeedProps) {
                 >
                     Gym Sessions
                 </button>
+                <button
+                    className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('requests')}
+                >
+                    Requests
+                </button>
             </div>
 
             {/* Tab Content */}
@@ -48,6 +55,12 @@ function TabbedFeed({ refreshTrigger }: TabbedFeedProps) {
                     <div className="sessions-tab">
                         <PostCreation onPostCreated={handlePostCreated} />
                         <PostList refreshTrigger={postRefreshTrigger} />
+                    </div>
+                )}
+
+                {activeTab === 'requests' && (
+                    <div className="requests-tab">
+                        <RequestsList />
                     </div>
                 )}
             </div>

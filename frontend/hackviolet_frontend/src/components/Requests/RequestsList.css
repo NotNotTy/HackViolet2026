@@ -1,0 +1,204 @@
+.requests-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.requests-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 2rem;
+}
+
+.requests-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.request-tab {
+    padding: 12px 24px;
+    border: none;
+    background: none;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.request-tab:hover {
+    color: #333;
+}
+
+.request-tab.active {
+    color: #4CAF50;
+    border-bottom-color: #4CAF50;
+}
+
+.requests-content {
+    margin-top: 20px;
+}
+
+.requests-section {
+    margin-bottom: 30px;
+}
+
+.requests-section h3 {
+    margin-bottom: 15px;
+    color: #555;
+    font-size: 1.3rem;
+}
+
+.requests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.request-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.request-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+
+.request-header h4 {
+    margin: 0;
+    color: #007bff;
+    font-size: 1.1rem;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-accepted {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.request-details {
+    margin-bottom: 15px;
+}
+
+.request-details p {
+    margin: 8px 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.request-details strong {
+    color: #333;
+}
+
+.request-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.accept-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.accept-btn:hover {
+    background-color: #45a049;
+}
+
+.reject-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.reject-btn:hover {
+    background-color: #da190b;
+}
+
+.loading,
+.no-requests {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 1rem;
+}
+
+.error-message {
+    background-color: #fee;
+    color: #c33;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .requests-container {
+        padding: 10px;
+        margin: 10px auto;
+    }
+    
+    .requests-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .request-card {
+        padding: 15px;
+    }
+    
+    .request-actions {
+        flex-direction: column;
+    }
+    
+    .request-actions button {
+        width: 100%;
+    }
+}

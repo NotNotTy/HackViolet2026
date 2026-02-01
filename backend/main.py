@@ -35,9 +35,7 @@ def after_request(response):
 @app.route('/api/profiles', methods=['OPTIONS'])
 @app.route('/api/profiles/<path:path>', methods=['OPTIONS'])
 @app.route('/api/profiles/interest', methods=['OPTIONS'])
-@app.route('/api/posts/<path:path>/request', methods=['OPTIONS'])
 @app.route('/api/requests', methods=['OPTIONS'])
-@app.route('/api/requests/<path:path>/respond', methods=['OPTIONS'])
 @app.route('/api/verify-email', methods=['OPTIONS'])
 @app.route('/api/resend-verification', methods=['OPTIONS'])
 @app.route('/api/reset', methods=['OPTIONS'])
@@ -273,17 +271,20 @@ def check_verification_status():
     try:
         token = request.args.get('token')
         
+        # If no token provided, return a helpful message instead of error
         if not token:
-            return jsonify({'error': 'Verification token required'}), 400
+            return jsonify({
+                'message': 'No token provided. Please use the verification link from your email.',
+                'token_provided': False
+            }), 200
         
         # Check if token exists
         if token not in verification_tokens:
-            # Token doesn't exist - check if user might already be verified
-            # We can't determine which user without the token, so just return error
+            # Token doesn't exist - might be already used or expired
             return jsonify({
-                'error': 'Invalid or expired verification token',
+                'message': 'Token not found. It may have already been used or expired.',
                 'token_exists': False
-            }), 400
+            }), 200
         
         verification_data = verification_tokens[token]
         email = verification_data['email']
@@ -981,23 +982,25 @@ def express_interest():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/posts/<post_id>/request', methods=['POST'])
-def request_to_join():
+@app.route('/api/posts/<post_id>/request', methods=['POST', 'OPTIONS'])
+def request_to_join(post_id):
     """Request to join a gym session"""
+    # Handle OPTIONS preflight - headers will be added by after_request
+    if request.method == 'OPTIONS':
+        response = jsonify({})
+        # Explicitly set CORS headers for OPTIONS
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         user_id = get_user_from_token()
         if not user_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
-        # Get post_id from URL path parameter
-        post_id = request.view_args.get('post_id')
         if not post_id:
-            # Fallback: try to extract from request path
-            path_parts = request.path.split('/')
-            if 'posts' in path_parts:
-                post_idx = path_parts.index('posts')
-                if post_idx + 1 < len(path_parts):
-                    post_id = path_parts[post_idx + 1]
+            return jsonify({'error': 'Post ID required'}), 400
         
         post = next((p for p in posts if p['id'] == post_id), None)
         
@@ -1042,11 +1045,57 @@ def get_requests():
         if not user_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
-        # Get requests where user is the receiver
-        received_requests = [r for r in interest_requests if r['receiver_id'] == user_id and r['status'] == 'pending']
+        # Get requests where user is the receiver (all statuses for gym sessions)
+        received_requests = []
+        for r in interest_requests:
+            if r['receiver_id'] == user_id:
+                # For post requests, include all statuses; for profile requests, only pending
+                if r.get('type') == 'post' or r.get('status') == 'pending':
+                    request_data = r.copy()
+                    # Add sender info
+                    sender = None
+                    for u in emails.values():
+                        if u['id'] == r['sender_id']:
+                            sender = u
+                            break
+                    if sender:
+                        request_data['sender_name'] = f"{sender.get('first_name', '')} {sender.get('last_name', '')}".strip()
+                        request_data['sender_email'] = sender.get('email', '')
+                    
+                    # Add post info if it's a post request
+                    if r.get('type') == 'post' and r.get('post_id'):
+                        post = next((p for p in posts if p['id'] == r['post_id']), None)
+                        if post:
+                            request_data['post_title'] = post.get('title', post.get('workout_type', 'Gym Session'))
+                            request_data['post_date_time'] = post.get('date_time')
+                            request_data['post_location'] = post.get('location')
+                    
+                    received_requests.append(request_data)
         
         # Get requests where user is the sender
-        sent_requests = [r for r in interest_requests if r['sender_id'] == user_id]
+        sent_requests = []
+        for r in interest_requests:
+            if r['sender_id'] == user_id:
+                request_data = r.copy()
+                # Add receiver info
+                receiver = None
+                for u in emails.values():
+                    if u['id'] == r['receiver_id']:
+                        receiver = u
+                        break
+                if receiver:
+                    request_data['receiver_name'] = f"{receiver.get('first_name', '')} {receiver.get('last_name', '')}".strip()
+                    request_data['receiver_email'] = receiver.get('email', '')
+                
+                # Add post info if it's a post request
+                if r.get('type') == 'post' and r.get('post_id'):
+                    post = next((p for p in posts if p['id'] == r['post_id']), None)
+                    if post:
+                        request_data['post_title'] = post.get('title', post.get('workout_type', 'Gym Session'))
+                        request_data['post_date_time'] = post.get('date_time')
+                        request_data['post_location'] = post.get('location')
+                
+                sent_requests.append(request_data)
         
         return jsonify({
             'received': received_requests,
@@ -1056,29 +1105,31 @@ def get_requests():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/requests/<request_id>/respond', methods=['POST'])
-def respond_to_request():
+@app.route('/api/requests/<request_id>/respond', methods=['POST', 'OPTIONS'])
+def respond_to_request(request_id):
     """Respond to an interest/join request (accept or reject)"""
+    # Handle OPTIONS preflight - headers will be added by after_request
+    if request.method == 'OPTIONS':
+        response = jsonify({})
+        # Explicitly set CORS headers for OPTIONS
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         user_id = get_user_from_token()
         if not user_id:
             return jsonify({'error': 'Unauthorized'}), 401
         
         data = request.json
-        response = data.get('response')  # 'accept' or 'reject'
+        response_action = data.get('response')  # 'accept' or 'reject'
         
-        if response not in ['accept', 'reject']:
+        if response_action not in ['accept', 'reject']:
             return jsonify({'error': 'Response must be "accept" or "reject"'}), 400
         
-        # Get request_id from URL path parameter
-        request_id = request.view_args.get('request_id')
         if not request_id:
-            # Fallback: try to extract from request path
-            path_parts = request.path.split('/')
-            if 'requests' in path_parts:
-                req_idx = path_parts.index('requests')
-                if req_idx + 1 < len(path_parts):
-                    request_id = path_parts[req_idx + 1]
+            return jsonify({'error': 'Request ID required'}), 400
         
         interest_request = next((r for r in interest_requests if r['id'] == request_id), None)
         
@@ -1092,11 +1143,11 @@ def respond_to_request():
             return jsonify({'error': 'Request already responded to'}), 400
         
         # Update request status
-        interest_request['status'] = 'accepted' if response == 'accept' else 'rejected'
+        interest_request['status'] = 'accepted' if response_action == 'accept' else 'rejected'
         interest_request['responded_at'] = datetime.now().isoformat()
         
         # TODO: Send email notification if accepted
-        if response == 'accept':
+        if response_action == 'accept':
             # Get sender and receiver emails for notification
             sender_email = None
             receiver_email = None
@@ -1111,7 +1162,7 @@ def respond_to_request():
             print(f"TODO: Send email to {sender_email} and {receiver_email} about match")
         
         return jsonify({
-            'message': f'Request {response}ed successfully',
+            'message': f'Request {response_action}ed successfully',
             'request': interest_request
         }), 200
         
@@ -1349,6 +1400,42 @@ def seed_database():
                 'type': 'post',
                 'status': 'pending',
                 'created_at': (now - timedelta(minutes=30)).isoformat()
+            },
+            {
+                'id': 'req3',
+                'sender_id': 'user2',
+                'receiver_id': 'user1',
+                'post_id': 'post1',
+                'type': 'post',
+                'status': 'pending',
+                'created_at': (now - timedelta(hours=2)).isoformat()
+            },
+            {
+                'id': 'req4',
+                'sender_id': 'user3',
+                'receiver_id': 'user1',
+                'post_id': 'post1',
+                'type': 'post',
+                'status': 'pending',
+                'created_at': (now - timedelta(minutes=45)).isoformat()
+            },
+            {
+                'id': 'req5',
+                'sender_id': 'user4',
+                'receiver_id': 'user2',
+                'post_id': 'post2',
+                'type': 'post',
+                'status': 'pending',
+                'created_at': (now - timedelta(minutes=15)).isoformat()
+            },
+            {
+                'id': 'req6',
+                'sender_id': 'user1',
+                'receiver_id': 'user3',
+                'post_id': 'post3',
+                'type': 'post',
+                'status': 'pending',
+                'created_at': (now - timedelta(minutes=20)).isoformat()
             },
         ]
         

@@ -52,6 +52,12 @@ function VerifyEmailPage({ setPage }: VerifyEmailPageProps) {
             } else {
                 setMessage('Email verified successfully! You can now access all features.');
             }
+            // Clean up URL by removing token parameter
+            const url = new URL(window.location.href);
+            url.searchParams.delete('token');
+            window.history.replaceState({}, '', url.toString());
+            // Store verification status to prevent redirect on refresh
+            sessionStorage.setItem('email_verified', 'true');
         } catch (err: any) {
             setHasVerified(true); // Mark as attempted to prevent retries
             setStatus('error');
@@ -61,6 +67,12 @@ function VerifyEmailPage({ setPage }: VerifyEmailPageProps) {
                 setMessage('This verification link has already been used. Your email is verified - you can log in normally.');
                 // If already verified, treat as success
                 setStatus('success');
+                // Clean up URL even on error if already verified
+                const url = new URL(window.location.href);
+                url.searchParams.delete('token');
+                window.history.replaceState({}, '', url.toString());
+                // Store verification status
+                sessionStorage.setItem('email_verified', 'true');
             } else {
                 setMessage(errorMsg);
             }
