@@ -59,9 +59,13 @@ def register():
         gender = data.get('gender')
         age = data.get('age')
         
-        # Validation
-        if not all([password, first_name, last_name, email, gender, age]):
-            return jsonify({'error': 'Missing required fields'}), 400
+        # Validation - email, password, first_name, last_name are required
+        if not all([password, first_name, last_name, email]):
+            return jsonify({'error': 'Missing required fields: email, password, first name, and last name are required'}), 400
+        
+        # Validate email is .edu domain
+        if not email.endswith('.edu'):
+            return jsonify({'error': 'Please use a valid .edu email address'}), 400
         
         # Check if user already exists
         if email in emails:
@@ -103,32 +107,32 @@ def login():
     
     try:
         data = request.json
-        email = data.get('email')
+        email_input = data.get('email')
         password = data.get('password')
         
-        if not email or not password:
+        if not email_input or not password:
             return jsonify({'error': 'Email and password required'}), 400
         
         # Check if email exists
-        if email not in emails:
+        if email_input not in emails:
             return jsonify({'error': 'Invalid credentials'}), 401
         
-        email = emails[email]
+        user_data = emails[email_input]
         password_hash = hash_password(password)
         
         # Verify password
-        if email['password_hash'] != password_hash:
+        if user_data['password_hash'] != password_hash:
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Generate session token
         token = generate_token()
-        user_sessions[token] = email['id']
+        user_sessions[token] = user_data['id']
         
         return jsonify({
             'message': 'Login successful',
             'token': token,
-            'user_id': email['id'],
-            'username': email
+            'user_id': user_data['id'],
+            'email': email_input
         }), 200
         
     except Exception as e:

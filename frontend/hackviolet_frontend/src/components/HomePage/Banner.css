@@ -41,14 +41,23 @@
       font-size: 1rem;
     }
     
-    .banner-left,
-    .banner-right {
+    .banner-left {
       width: 48px;
+    }
+    
+    .banner-right {
+      width: 100px;
+      padding-right: 0.5rem;
     }
     
     .banner img {
       width: 48px;
       height: 48px;
+    }
+    
+    .profile-button {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.85rem;
     }
   }
 
@@ -56,12 +65,36 @@
     text-align: center;
   }
 
-  .banner-left,
-  .banner-right {
+  .banner-left {
     width: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  
+  .banner-right {
+    width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1rem;
+  }
+  
+  .profile-button {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .profile-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
   }
   /* Center column */
   .banner-center {

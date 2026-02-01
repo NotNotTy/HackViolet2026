@@ -35,8 +35,8 @@ function CreationBlock({buttonText, setPage} : CreationBlock) {
                 gender: gender || undefined,
                 age: age || undefined,
             });
-            // Navigate to gym info page after successful registration
-            setPage(Page.GymInfo);
+            // Navigate to main feed after successful registration
+            setPage(Page.PostPage);
         } catch (err: any) {
             setError(err.message || "Registration failed. Please try again.");
         } finally {

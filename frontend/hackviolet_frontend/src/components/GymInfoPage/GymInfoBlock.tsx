@@ -1,7 +1,7 @@
 import './GymInfoBlock.css'
 import { Page } from "../../types/page";
 import Dropdown from "../../util/Dropdown";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { gymInfoAPI } from "../../util/api";
 
 interface GymInfoBlock {
@@ -13,6 +13,24 @@ function GymInfoBlock({buttonText, setPage} : GymInfoBlock) {
     const [experience, setExperience] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true);
+
+    // Load existing gym info when component mounts
+    useEffect(() => {
+        const loadGymInfo = async () => {
+            try {
+                const data = await gymInfoAPI.getGymInfo();
+                if (data.focus) setFocus(data.focus);
+                if (data.experience) setExperience(data.experience);
+            } catch (err: any) {
+                // If no gym info exists, that's okay - user can set it up
+                console.log("No existing gym info found");
+            } finally {
+                setLoadingData(false);
+            }
+        };
+        loadGymInfo();
+    }, []);
 
     const handleSave = async () => {
         if (!focus || !experience) {
@@ -24,8 +42,9 @@ function GymInfoBlock({buttonText, setPage} : GymInfoBlock) {
         setError("");
         try {
             await gymInfoAPI.saveGymInfo(focus, experience);
-            // Navigate to post page after saving
-            setPage(Page.PostPage);
+            // Show success message and stay on profile page
+            setError(""); // Clear any previous errors
+            alert("Profile updated successfully!");
         } catch (err: any) {
             setError(err.message || "Failed to save gym info. Please try again.");
         } finally {
@@ -33,11 +52,22 @@ function GymInfoBlock({buttonText, setPage} : GymInfoBlock) {
         }
     };
 
+    if (loadingData) {
+        return (
+            <div className='gymblock'>
+                <div className='gymcard'>
+                    <h1 id="header">Profile Settings</h1>
+                    <div>Loading...</div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
         <div className='gymblock'>
             <div className='gymcard'>
-                <h1 id="header"> Gym Information </h1>
+                <h1 id="header">Profile Settings</h1>
                 {error && <div className="error-message">{error}</div>}
                 <div className="input-group">
                     <h1> What do you plan to focus on? </h1>
