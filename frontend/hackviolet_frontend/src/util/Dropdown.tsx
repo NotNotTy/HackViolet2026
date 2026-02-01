@@ -8,7 +8,7 @@ type DropdownProps = {
 
 function Dropdown({options, value, onChange }: DropdownProps) {
   return (
-    <div className="input-group">
+    <div className="input-group-dropdown">
 
       <select
         className="dropdown"

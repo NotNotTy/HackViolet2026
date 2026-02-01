@@ -8,7 +8,7 @@ import '../App.css'
 interface CreationPage {
   setPage: (page: Page) => void;
 }
-function LoginPage({setPage} : CreationPage) {
+function CreationPage({setPage} : CreationPage) {
   return (
     <>
       <Banner setPage = {setPage} text='Lift Link'></Banner>
@@ -17,4 +17,4 @@ function LoginPage({setPage} : CreationPage) {
   )
 }
 
-export default LoginPage
+export default CreationPage

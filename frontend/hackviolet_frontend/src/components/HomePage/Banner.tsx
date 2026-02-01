@@ -13,12 +13,12 @@ function Banner({setPage, text} : Banner) {
     return (
         <>
         <div className="banner">
-            <div className="banner-left">
+    
             <button onClick={() => setPage(Page.Home)}>
                     <img src={logo} alt="Company Logo"></img>
                 </button>
                 
-            </div>
+            
             <div className="banner-center">
                 <h2>{text}</h2>
             </div>
