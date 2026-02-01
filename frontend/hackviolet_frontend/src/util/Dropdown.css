@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    align-items: center;
   }
   
   .input-group label {
@@ -16,8 +17,11 @@
     -webkit-appearance: none;
     -moz-appearance: none;
   
-    padding: 0.75rem;
+    width: 100%;
+    max-width: 300px;
+    padding: 0.75rem 1rem;
     font-size: 1rem;
+    box-sizing: border-box;
   
     border: 1px solid #d1d5db;
     border-radius: 6px;
@@ -43,6 +47,12 @@
     background-repeat: no-repeat;
   
     transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  @media (max-width: 768px) {
+    .dropdown {
+      max-width: 100%;
+    }
   }
   
   /* Focus state */

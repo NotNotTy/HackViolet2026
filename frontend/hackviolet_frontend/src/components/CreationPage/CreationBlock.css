@@ -17,82 +17,97 @@
     background-color: rgb(255, 255, 255);
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    width: clamp(75vw, 15vw, 75vw);
-    height: clamp(75vh, 15vh, 75vh);
+    justify-content: flex-start;
+    width: 90%;
+    max-width: 800px;
+    min-height: 500px;
+    padding: 2rem;
     border-radius: 12px;
-
-    border-color: gray;
+    box-sizing: border-box;
     text-align: center;
-    border: 10px;
+    position: relative;
   
     box-shadow:
     0 10px 25px rgba(0, 0, 0, 0.08),
     0 4px 10px rgba(0, 0, 0, 0.05);
 
     align-items: center;
-    
-    
   }
 
   .infoblock {
-    width: clamp(75vw, 15vw, 75vw);
-    height: clamp(60vh, 30vh, 60vh);
+    width: 100%;
     display: flex;
     flex-direction: row;
-    justify-content: flex-start;
-    border-radius: 12px;
-
-    border-color: gray;
-    border: 10px;
+    justify-content: center;
+    gap: 3rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
   
-  }
   .leftblock {
-    width: clamp(40vw, 15vw, 35vw);
-    height: clamp(60vh, 15vh, 15vh);
-    border-radius: 12px;
-
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    flex-direction: column;
-    display: flex;
-    
-
-
-    border: 10px;
+    gap: 1.5rem;
   }
+  
   .rightblock {
-    width: clamp(40vw, 15vw, 35vw);
-    height: clamp(60vh, 15vh, 15vh);
-    border-radius: 12px;
-
-    
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    flex-direction: column;
-    display: flex;
+    gap: 1.5rem;
+  }
+  
+  .error-message {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #fee;
+    color: #c33;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 768px) {
+    .infoblock {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
     
-
-    border: 10px;
+    .leftblock,
+    .rightblock {
+      width: 100%;
+      min-width: 100%;
+    }
   }
   
     /* Input field */
+  .input-group {
+    width: 100%;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
   .input-group input {
-    width: 20vw;
-    padding: 0.75rem 0.100rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
     font-size: 1rem;
-
+    box-sizing: border-box;
     
     border: 1px solid #d1d5db;
     border-radius: 6px;
   
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
-
-    /* display: flex;
-    flex-direction: row;
-    justify-content: flex-end; */
-
   }
   
   /* Focus state (VERY important) */
@@ -109,44 +124,70 @@
     
   
   .creationcard button {
-    margin-bottom: 25px;
-    position: absolute;
-    width: 15%;
-    min-height: clamp(10vh, 10vh, 22px);
-    min-width: clamp(10vh, 10vh, 22px);
+    margin-top: 2rem;
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 280px;
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
   
     border-radius: 12px;
     
-    font-size: clamp(2vw, 2vw, 16px);
+    font-size: 1rem;
+    font-weight: 500;
     text-align: center;
     cursor: pointer;
   
-    background-color: None;
+    background-color: transparent;
     color: black;
-    outline: 2px solid #dde3ee;;
+    border: 2px solid #dde3ee;
     transition: background-color 0.3s ease, transform 0.15s ease;
   }
 
   .creationcard button:hover {
     background-color: #0088ff;
-    color: white
-    }
+    color: white;
+    border-color: #0088ff;
+  }
   
   
   .input-group p {
-    width: 20vw;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    width: 100%;
   }
   
   .creationcard span {
-    margin-top: 10px;
+    margin-top: 1rem;
+    cursor: pointer;
+    color: #2563eb;
   }
   .creationcard span:hover {
     text-decoration: underline;
   }
   
   #createaccount {
-    font-size: clamp(3vw, 3vw, 3vw);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    margin-top: 0;
   }
   
-  
+  @media (max-width: 768px) {
+    .creationcard {
+      width: 95%;
+      padding: 1.5rem;
+      min-height: auto;
+    }
+    
+    #createaccount {
+      font-size: 1.5rem;
+    }
+    
+    .input-group input {
+      max-width: 100%;
+    }
+  }
     

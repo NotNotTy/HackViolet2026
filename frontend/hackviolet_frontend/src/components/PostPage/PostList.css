@@ -136,3 +136,32 @@
     border-radius: 4px;
     margin-bottom: 20px;
 }
+
+@media (max-width: 768px) {
+    .post-list-container {
+        padding: 10px;
+        margin: 10px auto;
+    }
+    
+    .filters {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filter-actions button {
+        width: 100%;
+    }
+    
+    .posts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .post-card {
+        padding: 15px;
+    }
+}

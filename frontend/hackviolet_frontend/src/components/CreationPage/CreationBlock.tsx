@@ -49,7 +49,7 @@ function CreationBlock({buttonText, setPage} : CreationBlock) {
         <div className='creationblock'>
             <div className='creationcard'>
                 <h1 id="createaccount"> Create Account </h1>
-                {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
+                {error && <div className="error-message">{error}</div>}
                 <div className="infoblock">
                 <div className="leftblock">
                     <div className="input-group">

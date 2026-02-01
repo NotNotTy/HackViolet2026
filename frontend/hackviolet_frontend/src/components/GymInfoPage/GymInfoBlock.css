@@ -18,21 +18,19 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    width: clamp(75vw, 15vw, 75vw);
-    height: clamp(75vh, 15vh, 75vh);
+    width: 90%;
+    max-width: 600px;
+    min-height: 400px;
+    padding: 2rem;
     border-radius: 12px;
-
-    border-color: gray;
+    box-sizing: border-box;
     text-align: center;
-    border: 10px;
   
     box-shadow:
     0 10px 25px rgba(0, 0, 0, 0.08),
     0 4px 10px rgba(0, 0, 0, 0.05);
 
     align-items: center;
-    
-    
   }
 
 
@@ -40,21 +38,26 @@
   
     /* Input field */
   .input-group input {
-    width: 20vw;
-    padding: 0.75rem 0.100rem;
+    width: 100%;
+    max-width: 400px;
+    padding: 0.75rem 1rem;
     font-size: 1rem;
-
+    box-sizing: border-box;
     
     border: 1px solid #d1d5db;
     border-radius: 6px;
   
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
-
-    /* display: flex;
-    flex-direction: row;
-    justify-content: flex-end; */
-
+  }
+  
+  .input-group {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   /* Focus state (VERY important) */
@@ -71,40 +74,73 @@
     
   
   .gymblock button {
-    margin-bottom: 25px;
-    margin-top: 25px;
-    width: 30%;
-    min-height: clamp(10vh, 10vh, 22px);
-    min-width: clamp(10vh, 10vh, 22px);
+    margin-bottom: 0;
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 400px;
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
   
     border-radius: 12px;
     
-    font-size: clamp(2vw, 2vw, 16px);
+    font-size: 1rem;
+    font-weight: 500;
     text-align: center;
     cursor: pointer;
   
-    background-color: None;
+    background-color: transparent;
     color: black;
-    outline: 2px solid #dde3ee;;
+    border: 2px solid #dde3ee;
     transition: background-color 0.3s ease, transform 0.15s ease;
   }
 
   /* Gradient on hover */
 .gymblock button:hover {
     background-color: #0088ff;
-    color: white
-    }
-
-  
+    color: white;
+    border-color: #0088ff;
+  }
   
   .input-group h1 {
-    font-size: clamp(2vw, 2vw, 2vw);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    width: 100%;
   }
   
+  .error-message {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #fee;
+    color: #c33;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
   
   #header {
-    font-size: clamp(3.5vw, 3.5vw, 3.5vw);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+    margin-top: 0;
   }
   
-  
+  @media (max-width: 768px) {
+    .gymcard {
+      width: 95%;
+      padding: 1.5rem;
+      min-height: auto;
+    }
+    
+    #header {
+      font-size: 1.5rem;
+    }
+    
+    .input-group h1 {
+      font-size: 0.9rem;
+    }
+  }
     

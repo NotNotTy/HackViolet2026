@@ -36,7 +36,7 @@ function LoginBlock({setPage} : LoginBlock) {
         <div className='loginblock'>
             <div className='login'>
                 <h1 id="signup"> Sign In </h1>
-                {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
+                {error && <div className="error-message">{error}</div>}
                 <div className="input-group">
                     <h1> Username </h1>
                     <input 

@@ -38,7 +38,7 @@ function GymInfoBlock({buttonText, setPage} : GymInfoBlock) {
         <div className='gymblock'>
             <div className='gymcard'>
                 <h1 id="header"> Gym Information </h1>
-                {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
+                {error && <div className="error-message">{error}</div>}
                 <div className="input-group">
                     <h1> What do you plan to focus on? </h1>
                     <Dropdown  options={["Weight Loss","Muscle Gains","Cardio", "Other"]} value={focus} onChange={setFocus}/>

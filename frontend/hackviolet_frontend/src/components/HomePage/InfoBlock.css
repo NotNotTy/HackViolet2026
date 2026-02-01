@@ -1,17 +1,35 @@
 .subpage {
     background-color: #dde3ee;
     padding-top: 64px;
+    padding-bottom: 3rem;
     width: 100%;
-    height: 350px;
-
-
-    
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
   }
 
 .subpage p {
-  font-size: 2vw;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   text-align: center;
+  max-width: 900px;
+  padding: 0 2rem;
+  line-height: 1.6;
+  color: #374151;
+}
 
+@media (max-width: 768px) {
+  .subpage {
+    padding-top: 56px;
+    padding-bottom: 2rem;
+    min-height: 250px;
+  }
+  
+  .subpage p {
+    font-size: 0.95rem;
+    padding: 0 1rem;
+  }
 }
 
 

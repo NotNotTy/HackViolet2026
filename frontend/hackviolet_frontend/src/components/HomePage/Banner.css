@@ -25,6 +25,33 @@
     margin: 0;
   }
 
+  .banner h2 {
+    font-size: 1.25rem;
+    margin: 0;
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .banner {
+      height: 56px;
+      padding: 0 1rem;
+    }
+    
+    .banner h1, .banner h2 {
+      font-size: 1rem;
+    }
+    
+    .banner-left,
+    .banner-right {
+      width: 48px;
+    }
+    
+    .banner img {
+      width: 48px;
+      height: 48px;
+    }
+  }
+
   .banner header {
     text-align: center;
   }

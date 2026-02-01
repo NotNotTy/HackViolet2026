@@ -1,10 +1,9 @@
 .footer {
-    background-color: #dde3ee46;
+    background-color: rgba(221, 227, 238, 0.3);
     width: 100%;
-    height: 10vh;
+    min-height: 60px;
+    padding: 1rem;
   
-    /* IMPORTANT */
-
     display: flex;
     box-sizing: border-box;
     align-items: center;
@@ -12,5 +11,19 @@
   }
 
   .footer h1 {
-    font-size: clamp(1vw, 1vw, 22px);
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    color: #6b7280;
+    text-align: center;
+    margin: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .footer {
+      min-height: 50px;
+      padding: 0.75rem;
+    }
+    
+    .footer h1 {
+      font-size: 0.875rem;
+    }
   }
