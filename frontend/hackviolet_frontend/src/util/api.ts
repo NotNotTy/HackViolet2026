@@ -40,10 +40,10 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
 // Authentication APIs
 export const authAPI = {
-  login: async (username: string, password: string) => {
+  login: async (email: string, password: string) => {
     const data = await apiCall('/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
     if (data.token) {
       setAuthToken(data.token);
@@ -52,7 +52,6 @@ export const authAPI = {
   },
 
   register: async (userData: {
-    username: string;
     password: string;
     first_name: string;
     last_name: string;

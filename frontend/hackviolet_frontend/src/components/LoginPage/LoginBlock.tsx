@@ -7,21 +7,21 @@ interface LoginBlock {
     setPage: (page: Page) => void;
 }
 function LoginBlock({setPage} : LoginBlock) {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
-        if (!username || !password) {
-            setError("Please enter both username and password");
+        if (!email || !password) {
+            setError("Please enter both email and password");
             return;
         }
 
         setLoading(true);
         setError("");
         try {
-            await authAPI.login(username, password);
+            await authAPI.login(email, password);
             // Navigate to post page after successful login
             setPage(Page.PostPage);
         } catch (err: any) {
@@ -42,9 +42,9 @@ function LoginBlock({setPage} : LoginBlock) {
                     <input 
                         id="username" 
                         type="text" 
-                        placeholder="Enter your username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                     />
                 </div>

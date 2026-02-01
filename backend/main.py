@@ -28,7 +28,7 @@ def options_handler(path=None):
     return jsonify({}), 200
 
 # In-memory storage (replace with database in production)
-users: Dict[str, Dict] = {}
+emails: Dict[str, Dict] = {}
 user_sessions: Dict[str, str] = {}  # token -> user_id
 gym_info: Dict[str, Dict] = {}  # user_id -> gym preferences
 posts: List[Dict] = []  # List of all posts/sessions
@@ -52,7 +52,6 @@ def register():
     
     try:
         data = request.json
-        username = data.get('username')
         password = data.get('password')
         first_name = data.get('first_name')
         last_name = data.get('last_name')
@@ -61,18 +60,17 @@ def register():
         age = data.get('age')
         
         # Validation
-        if not all([username, password, first_name, last_name, email]):
+        if not all([password, first_name, last_name, email, gender, age]):
             return jsonify({'error': 'Missing required fields'}), 400
         
         # Check if user already exists
-        if username in users:
-            return jsonify({'error': 'Username already exists'}), 409
+        if email in emails:
+            return jsonify({'error': 'Account already exists'}), 409
         
         # Create user
         user_id = str(uuid.uuid4())
-        users[username] = {
+        emails[email] = {
             'id': user_id,
-            'username': username,
             'password_hash': hash_password(password),
             'first_name': first_name,
             'last_name': last_name,
@@ -90,7 +88,7 @@ def register():
             'message': 'User registered successfully',
             'token': token,
             'user_id': user_id,
-            'username': username
+            'email': email
         }), 201
         
     except Exception as e:
@@ -105,32 +103,32 @@ def login():
     
     try:
         data = request.json
-        username = data.get('username')
+        email = data.get('email')
         password = data.get('password')
         
-        if not username or not password:
-            return jsonify({'error': 'Username and password required'}), 400
+        if not email or not password:
+            return jsonify({'error': 'Email and password required'}), 400
         
-        # Check if user exists
-        if username not in users:
+        # Check if email exists
+        if email not in emails:
             return jsonify({'error': 'Invalid credentials'}), 401
         
-        user = users[username]
+        email = emails[email]
         password_hash = hash_password(password)
         
         # Verify password
-        if user['password_hash'] != password_hash:
+        if email['password_hash'] != password_hash:
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Generate session token
         token = generate_token()
-        user_sessions[token] = user['id']
+        user_sessions[token] = email['id']
         
         return jsonify({
             'message': 'Login successful',
             'token': token,
-            'user_id': user['id'],
-            'username': username
+            'user_id': email['id'],
+            'username': email
         }), 200
         
     except Exception as e:
@@ -226,16 +224,16 @@ def create_post():
             return jsonify({'error': 'Missing required fields'}), 400
         
         # Get user info
-        username = None
-        for u in users.values():
+        email = None
+        for u in emails.values():
             if u['id'] == user_id:
-                username = u['username']
+                email = u['email']
                 break
         
         post = {
             'id': str(uuid.uuid4()),
             'user_id': user_id,
-            'username': username,
+            'username': email,
             'workout_type': workout_type,
             'date_time': date_time,
             'location': location,
@@ -372,17 +370,17 @@ def get_user():
             return jsonify({'error': 'Unauthorized'}), 401
         
         # Find user
-        user = None
-        for u in users.values():
+        email = None
+        for u in emails.values():
             if u['id'] == user_id:
-                user = u.copy()
-                del user['password_hash']  # Don't return password
+                emails = u.copy()
+                del emails['password_hash']  # Don't return password
                 break
         
-        if not user:
+        if not emails:
             return jsonify({'error': 'User not found'}), 404
         
-        return jsonify(user), 200
+        return jsonify(emails), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
