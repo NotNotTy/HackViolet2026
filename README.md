@@ -16,6 +16,7 @@ A fitness partner matching application for college students to find compatible w
 ### Running the Application
 
 #### 1. Start the Backend Server
+Navigate to the 'backend' folder
 
 ```bash
 cd backend
@@ -23,19 +24,21 @@ pip install -r requirements.txt
 python main.py
 ```
 
-The backend will run on `http://localhost:5001`
+The backend will run on `http://localhost:xxxx`
 
 #### 2. Start the Frontend
 
-Open a new terminal:
+Open a new terminal and navigate to the 'hackviolet_frontend' folder
 
 ```bash
+cd ..
+cd ..
 cd frontend/hackviolet_frontend
 npm install
 npm run dev
 ```
 
-The frontend will run on `http://localhost:5173` (or another port if 5173 is taken)
+The frontend will run on `http://localhost:xxxx`
 
 ## Features
 
