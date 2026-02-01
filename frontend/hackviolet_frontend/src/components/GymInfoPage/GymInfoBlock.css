@@ -1,0 +1,110 @@
+.gymblock {
+    background-color: #dde3ee;
+    width: 100%;
+    height: 100vh;
+    padding-top: 64px;
+  
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    /* IMPORTANT */
+  
+    box-sizing: border-box;
+  }
+  
+  .gymcard {
+    background-color: rgb(255, 255, 255);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: clamp(75vw, 15vw, 75vw);
+    height: clamp(75vh, 15vh, 75vh);
+    border-radius: 12px;
+
+    border-color: gray;
+    text-align: center;
+    border: 10px;
+  
+    box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.08),
+    0 4px 10px rgba(0, 0, 0, 0.05);
+
+    align-items: center;
+    
+    
+  }
+
+
+
+  
+    /* Input field */
+  .input-group input {
+    width: 20vw;
+    padding: 0.75rem 0.100rem;
+    font-size: 1rem;
+
+    
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+  
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    /* display: flex;
+    flex-direction: row;
+    justify-content: flex-end; */
+
+  }
+  
+  /* Focus state (VERY important) */
+  .input-group input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  }
+  
+  /* Placeholder styling */
+  .input-group input::placeholder {
+    color: #9ca3af;
+  }
+  
+    
+  
+  .gymblock button {
+    margin-bottom: 25px;
+    margin-top: 25px;
+    width: 30%;
+    min-height: clamp(10vh, 10vh, 22px);
+    min-width: clamp(10vh, 10vh, 22px);
+  
+    border-radius: 12px;
+    
+    font-size: clamp(2vw, 2vw, 16px);
+    text-align: center;
+    cursor: pointer;
+  
+    background-color: None;
+    color: black;
+    outline: 2px solid #dde3ee;;
+    transition: background-color 0.3s ease, transform 0.15s ease;
+  }
+
+  /* Gradient on hover */
+.gymblock button:hover {
+    background-color: #0088ff;
+    color: white
+    }
+
+  
+  
+  .input-group h1 {
+    font-size: clamp(2vw, 2vw, 2vw);
+  }
+  
+  
+  #header {
+    font-size: clamp(3.5vw, 3.5vw, 3.5vw);
+  }
+  
+  
+    
