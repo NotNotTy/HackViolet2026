@@ -1,0 +1,73 @@
+.tabbed-feed-container {
+    width: 100%;
+    padding-top: 64px;
+    min-height: calc(100vh - 64px);
+    background-color: #f5f5f5;
+}
+
+.feed-tabs {
+    display: flex;
+    background-color: white;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0;
+    margin: 0;
+    position: sticky;
+    top: 64px;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 1rem 2rem;
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.tab-button:hover {
+    background-color: #f9fafb;
+    color: #2563eb;
+}
+
+.tab-button.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    background-color: #f9fafb;
+}
+
+.tab-content {
+    width: 100%;
+    min-height: calc(100vh - 64px - 60px);
+}
+
+.profiles-tab,
+.sessions-tab {
+    width: 100%;
+    padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .tabbed-feed-container {
+        padding-top: 56px;
+    }
+    
+    .feed-tabs {
+        top: 56px;
+    }
+    
+    .tab-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .tab-content {
+        min-height: calc(100vh - 56px - 54px);
+    }
+}

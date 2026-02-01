@@ -385,6 +385,123 @@ def get_user():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ==================== PROFILES ENDPOINTS ====================
+
+@app.route('/api/profiles', methods=['GET'])
+def get_profiles():
+    """Get all user profiles with optional filtering"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get filter parameters
+        gender = request.args.get('gender')
+        experience_level = request.args.get('experience_level')
+        focus = request.args.get('focus')
+        
+        # Build profiles from emails data (users stored by email)
+        profiles_list = []
+        for email_addr, user_data in emails.items():
+            # Skip current user
+            if user_data['id'] == user_id:
+                continue
+            
+            # Get user's gym info if available
+            user_gym_info = gym_info.get(user_data['id'], {})
+            
+            profile = {
+                'id': user_data['id'],
+                'username': email_addr.split('@')[0],  # Use email prefix as username
+                'first_name': user_data.get('first_name', ''),
+                'last_name': user_data.get('last_name', ''),
+                'gender': user_data.get('gender'),
+                'age': user_data.get('age'),
+                'experience_level': user_gym_info.get('experience'),
+                'focus': user_gym_info.get('focus'),
+                'bio': '',  # TODO: Add bio field to user data
+            }
+            
+            # Apply filters
+            if gender and profile['gender'] != gender:
+                continue
+            if experience_level and profile['experience_level'] != experience_level:
+                continue
+            if focus and profile['focus'] != focus:
+                continue
+            
+            profiles_list.append(profile)
+        
+        return jsonify({
+            'profiles': profiles_list,
+            'count': len(profiles_list)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/profiles/<profile_id>', methods=['GET'])
+def get_profile(profile_id):
+    """Get a specific profile by ID"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Find user
+        user = None
+        for u in emails.values():
+            if u['id'] == profile_id:
+                user = u
+                break
+        
+        if not user:
+            return jsonify({'error': 'Profile not found'}), 404
+        
+        # Get gym info
+        user_gym_info = gym_info.get(profile_id, {})
+        
+        profile = {
+            'id': user['id'],
+            'username': user.get('username', ''),
+            'first_name': user.get('first_name', ''),
+            'last_name': user.get('last_name', ''),
+            'gender': user.get('gender'),
+            'age': user.get('age'),
+            'experience_level': user_gym_info.get('experience'),
+            'focus': user_gym_info.get('focus'),
+            'bio': '',  # TODO: Add bio field
+        }
+        
+        return jsonify(profile), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/profiles/interest', methods=['POST'])
+def express_interest():
+    """Express interest in a profile"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        profile_id = data.get('profile_id')
+        
+        if not profile_id:
+            return jsonify({'error': 'Profile ID required'}), 400
+        
+        # TODO: Store interest requests in database
+        # For now, just return success
+        return jsonify({
+            'message': 'Interest expressed successfully',
+            'profile_id': profile_id
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ==================== HEALTH CHECK ====================
 
 @app.route('/api/health', methods=['GET'])

@@ -1,11 +1,9 @@
 /**
- * PostPage
+ * PostPage - Main feed with Profiles and Gym Sessions tabs
  */
 import Banner from '../../components/HomePage/Banner.tsx'
-import PostCreation from '../../components/PostPage/PostCreation.tsx'
-import PostList from '../../components/PostPage/PostList.tsx'
+import TabbedFeed from '../../components/MainFeed/TabbedFeed.tsx'
 import { Page } from '../../types/page.ts'
-import { useState } from 'react'
 import '../App.css'
 
 interface PostPage {
@@ -13,19 +11,10 @@ interface PostPage {
 }
 
 function PostPage({setPage} : PostPage) {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const handlePostCreated = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
-
   return (
     <>
       <Banner setPage = {setPage} text='Lift Link'></Banner>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <PostCreation onPostCreated={handlePostCreated} />
-        <PostList refreshTrigger={refreshTrigger} />
-      </div>
+      <TabbedFeed />
     </>
   )
 }

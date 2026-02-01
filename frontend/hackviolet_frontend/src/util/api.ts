@@ -153,3 +153,36 @@ export const postsAPI = {
     });
   },
 };
+
+// Profiles APIs
+export const profilesAPI = {
+  getProfiles: async (filters?: {
+    gender?: string;
+    experience_level?: string;
+    focus?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+    }
+    const queryString = params.toString();
+    return apiCall(`/profiles${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  getProfile: async (profileId: string) => {
+    return apiCall(`/profiles/${profileId}`, {
+      method: 'GET',
+    });
+  },
+
+  expressInterest: async (profileId: string) => {
+    return apiCall('/profiles/interest', {
+      method: 'POST',
+      body: JSON.stringify({ profile_id: profileId }),
+    });
+  },
+};
