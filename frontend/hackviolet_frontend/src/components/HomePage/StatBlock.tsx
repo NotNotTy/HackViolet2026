@@ -10,7 +10,7 @@ function StatBlock() {
                 People are much more likely to maintain physical activity when they exercise with a companion.
                 </h2>
                 <p>
-                study found that adults who exercised with a friend were <strong>32% more likely to get enough physical activity and 45% more likely to report good mental health than those exercising alone</strong>, highlighting the benefit of social accountability for both fitness and well-being.
+                Study found that adults who exercised with a friend were <strong>32% more likely to get enough physical activity and 45% more likely to report good mental health than those exercising alone</strong>, highlighting the benefit of social accountability for both fitness and well-being.
                 </p>
                 <p id="source">
                     -National Institutes of Health

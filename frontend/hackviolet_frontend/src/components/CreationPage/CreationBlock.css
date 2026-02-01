@@ -1,8 +1,9 @@
 .creationblock {
     background-color: #dde3ee;
+    background-image: url('../../app/assets/workout_collage.jpg');
     width: 100%;
     height:auto;
-    max-height: 800px;
+    min-height: 100vh;
     padding-top: 64px;
     
     justify-content: center;
@@ -14,7 +15,30 @@
     /* IMPORTANT */
   
     box-sizing: border-box;
+
+    position: relative;
   }
+
+  /* 🔥 DARK OVERLAY */
+.creationblock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 75%;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.75) 300%
+  );
+
+  z-index: 1;
+}
+
+/* Make sure content stays above overlay */
+.creationblock > * {
+  position: relative;
+  z-index: 2;
+}
   
   .creationcard {
     padding-top: 0;

@@ -11,7 +11,7 @@ interface GymInfoPage {
 function GymInfoPage({setPage} : GymInfoPage) {
   return (
     <>
-      <Banner setPage = {setPage} text='Profile Settings'></Banner>
+      <Banner setPage = {setPage} text='LiftLink'></Banner>
       <GymInfoBlock buttonText='Save Changes' setPage={setPage}></GymInfoBlock>
     </>
   )
