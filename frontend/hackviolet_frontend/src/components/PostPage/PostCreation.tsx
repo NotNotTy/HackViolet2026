@@ -7,6 +7,7 @@ interface PostCreation {
 }
 
 function PostCreation({ onPostCreated }: PostCreation) {
+    const [title, setTitle] = useState("");
     const [workoutType, setWorkoutType] = useState("");
     const [dateTime, setDateTime] = useState("");
     const [location, setLocation] = useState("");
@@ -21,7 +22,7 @@ function PostCreation({ onPostCreated }: PostCreation) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!workoutType || !dateTime || !location || !partySize || !experienceLevel) {
+        if (!title || !workoutType || !dateTime || !location || !partySize || !experienceLevel) {
             setError("Please fill in all required fields");
             return;
         }
@@ -32,6 +33,7 @@ function PostCreation({ onPostCreated }: PostCreation) {
         
         try {
             await postsAPI.createPost({
+                title: title,
                 workout_type: workoutType,
                 date_time: dateTime,
                 location: location,
@@ -43,6 +45,7 @@ function PostCreation({ onPostCreated }: PostCreation) {
             
             setSuccess(true);
             // Reset form
+            setTitle("");
             setWorkoutType("");
             setDateTime("");
             setLocation("");
@@ -69,6 +72,17 @@ function PostCreation({ onPostCreated }: PostCreation) {
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">Post created successfully!</div>}
             <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label>Title *</label>
+                    <input
+                        type="text"
+                        placeholder="e.g., Morning Cardio Session"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        required
+                    />
+                </div>
+
                 <div className="form-group">
                     <label>Workout Type *</label>
                     <input
@@ -109,9 +123,11 @@ function PostCreation({ onPostCreated }: PostCreation) {
                         required
                     >
                         <option value="">Select party size</option>
-                        <option value="1-on-1">1-on-1</option>
-                        <option value="Small Group (2-3)">Small Group (2-3)</option>
-                        <option value="Group (4+)">Group (4+)</option>
+                        <option value="1">1 person</option>
+                        <option value="2">2 people</option>
+                        <option value="3">3 people</option>
+                        <option value="4">4 people</option>
+                        <option value="5">5 people</option>
                     </select>
                 </div>
 

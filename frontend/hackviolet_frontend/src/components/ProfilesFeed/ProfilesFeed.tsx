@@ -22,6 +22,9 @@ function ProfilesFeed() {
         gender: "",
         experience_level: "",
         focus: "",
+        age_min: "",
+        age_max: "",
+        same_gender_only: false,
     });
 
     useEffect(() => {
@@ -32,7 +35,15 @@ function ProfilesFeed() {
         setLoading(true);
         setError("");
         try {
-            const data = await profilesAPI.getProfiles(filters);
+            const filtersToSend: any = {};
+            if (filters.gender) filtersToSend.gender = filters.gender;
+            if (filters.experience_level) filtersToSend.experience_level = filters.experience_level;
+            if (filters.focus) filtersToSend.focus = filters.focus;
+            if (filters.age_min) filtersToSend.age_min = filters.age_min;
+            if (filters.age_max) filtersToSend.age_max = filters.age_max;
+            if (filters.same_gender_only) filtersToSend.same_gender_only = 'true';
+            
+            const data = await profilesAPI.getProfiles(filtersToSend);
             setProfiles(data.profiles || []);
         } catch (err: any) {
             setError(err.message || "Failed to load profiles");
@@ -45,6 +56,8 @@ function ProfilesFeed() {
         setFilters({ ...filters, [key]: value });
     };
 
+    const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+
     const applyFilters = () => {
         loadProfiles();
     };
@@ -54,6 +67,9 @@ function ProfilesFeed() {
             gender: "",
             experience_level: "",
             focus: "",
+            age_min: "",
+            age_max: "",
+            same_gender_only: false,
         });
         setTimeout(() => loadProfiles(), 100);
     };
@@ -105,11 +121,45 @@ function ProfilesFeed() {
                         onChange={(e) => handleFilterChange('focus', e.target.value)}
                     >
                         <option value="">All</option>
+                        <option value="Bodybuilding">Bodybuilding</option>
+                        <option value="Powerlifting">Powerlifting</option>
+                        <option value="Pilates">Pilates</option>
+                        <option value="Cardio">Cardio</option>
+                        <option value="General fitness">General fitness</option>
                         <option value="Weight Loss">Weight Loss</option>
                         <option value="Muscle Gains">Muscle Gains</option>
-                        <option value="Cardio">Cardio</option>
                         <option value="Other">Other</option>
                     </select>
+                </div>
+                <div className="filter-group">
+                    <label>Age Min</label>
+                    <input
+                        type="number"
+                        min="18"
+                        placeholder="Min age"
+                        value={filters.age_min}
+                        onChange={(e) => handleFilterChange('age_min', e.target.value)}
+                    />
+                </div>
+                <div className="filter-group">
+                    <label>Age Max</label>
+                    <input
+                        type="number"
+                        min="18"
+                        placeholder="Max age"
+                        value={filters.age_max}
+                        onChange={(e) => handleFilterChange('age_max', e.target.value)}
+                    />
+                </div>
+                <div className="filter-group">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={filters.same_gender_only}
+                            onChange={(e) => setFilters({ ...filters, same_gender_only: e.target.checked })}
+                        />
+                        Same gender only
+                    </label>
                 </div>
                 <div className="filter-actions">
                     <button onClick={applyFilters}>Apply Filters</button>
@@ -156,14 +206,72 @@ function ProfilesFeed() {
                                     <p className="profile-bio">{profile.bio}</p>
                                 )}
                             </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                                <button 
+                                    className="express-interest-btn"
+                                    style={{ flex: 1 }}
+                                    onClick={() => handleExpressInterest(profile.id)}
+                                >
+                                    Express Interest
+                                </button>
+                                <button 
+                                    className="view-profile-btn"
+                                    style={{ 
+                                        flex: 1,
+                                        padding: '10px',
+                                        backgroundColor: '#6c757d',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => setSelectedProfile(profile)}
+                                >
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Full Profile Modal */}
+            {selectedProfile && (
+                <div className="profile-modal-overlay" onClick={() => setSelectedProfile(null)}>
+                    <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="profile-modal-header">
+                            <h2>{selectedProfile.first_name} {selectedProfile.last_name}</h2>
+                            <button onClick={() => setSelectedProfile(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                        </div>
+                        <div className="profile-modal-content">
+                            <div className="profile-avatar-large">
+                                {selectedProfile.first_name?.[0] || 'U'}
+                            </div>
+                            <div className="profile-details-full">
+                                <p><strong>Username:</strong> @{selectedProfile.username}</p>
+                                {selectedProfile.gender && <p><strong>Gender:</strong> {selectedProfile.gender}</p>}
+                                {selectedProfile.age && <p><strong>Age:</strong> {selectedProfile.age}</p>}
+                                {selectedProfile.experience_level && <p><strong>Experience Level:</strong> {selectedProfile.experience_level}</p>}
+                                {selectedProfile.focus && <p><strong>Fitness Focus:</strong> {selectedProfile.focus}</p>}
+                                {selectedProfile.bio && (
+                                    <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+                                        <strong>Bio:</strong>
+                                        <p style={{ marginTop: '0.5rem' }}>{selectedProfile.bio}</p>
+                                    </div>
+                                )}
+                            </div>
                             <button 
                                 className="express-interest-btn"
-                                onClick={() => handleExpressInterest(profile.id)}
+                                onClick={() => {
+                                    handleExpressInterest(selectedProfile.id);
+                                    setSelectedProfile(null);
+                                }}
+                                style={{ width: '100%', marginTop: '1rem' }}
                             >
                                 Express Interest
                             </button>
                         </div>
-                    ))}
+                    </div>
                 </div>
             )}
         </div>

@@ -85,10 +85,10 @@ export const authAPI = {
 
 // Gym Info APIs
 export const gymInfoAPI = {
-  saveGymInfo: async (focus: string, experience: string) => {
+  saveGymInfo: async (focus: string, experience: string, bio?: string) => {
     return apiCall('/gym-info', {
       method: 'POST',
-      body: JSON.stringify({ focus, experience }),
+      body: JSON.stringify({ focus, experience, bio }),
     });
   },
 
@@ -99,9 +99,32 @@ export const gymInfoAPI = {
   },
 };
 
+// User APIs
+export const userAPI = {
+  updateUser: async (userData: {
+    first_name?: string;
+    last_name?: string;
+    gender?: string;
+    age?: string;
+    bio?: string;
+  }) => {
+    return apiCall('/user', {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  deleteAccount: async () => {
+    return apiCall('/user', {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Posts/Sessions APIs
 export const postsAPI = {
   createPost: async (postData: {
+    title: string;
     workout_type: string;
     date_time: string;
     location: string;
@@ -112,6 +135,22 @@ export const postsAPI = {
   }) => {
     return apiCall('/posts', {
       method: 'POST',
+      body: JSON.stringify(postData),
+    });
+  },
+
+  updatePost: async (postId: string, postData: {
+    title?: string;
+    workout_type?: string;
+    date_time?: string;
+    location?: string;
+    party_size?: string;
+    experience_level?: string;
+    gender_preference?: string;
+    notes?: string;
+  }) => {
+    return apiCall(`/posts/${postId}`, {
+      method: 'PUT',
       body: JSON.stringify(postData),
     });
   },
@@ -160,6 +199,9 @@ export const profilesAPI = {
     gender?: string;
     experience_level?: string;
     focus?: string;
+    age_min?: string;
+    age_max?: string;
+    same_gender_only?: boolean;
   }) => {
     const params = new URLSearchParams();
     if (filters) {
@@ -183,6 +225,28 @@ export const profilesAPI = {
     return apiCall('/profiles/interest', {
       method: 'POST',
       body: JSON.stringify({ profile_id: profileId }),
+    });
+  },
+};
+
+// Requests APIs
+export const requestsAPI = {
+  getRequests: async () => {
+    return apiCall('/requests', {
+      method: 'GET',
+    });
+  },
+
+  respondToRequest: async (requestId: string, response: 'accept' | 'reject') => {
+    return apiCall(`/requests/${requestId}/respond`, {
+      method: 'POST',
+      body: JSON.stringify({ response }),
+    });
+  },
+
+  requestToJoin: async (postId: string) => {
+    return apiCall(`/posts/${postId}/request`, {
+      method: 'POST',
     });
   },
 };

@@ -24,6 +24,12 @@ def after_request(response):
 @app.route('/api/posts', methods=['OPTIONS'])
 @app.route('/api/posts/<path:path>', methods=['OPTIONS'])
 @app.route('/api/user', methods=['OPTIONS'])
+@app.route('/api/profiles', methods=['OPTIONS'])
+@app.route('/api/profiles/<path:path>', methods=['OPTIONS'])
+@app.route('/api/profiles/interest', methods=['OPTIONS'])
+@app.route('/api/posts/<path:path>/request', methods=['OPTIONS'])
+@app.route('/api/requests', methods=['OPTIONS'])
+@app.route('/api/requests/<path:path>/respond', methods=['OPTIONS'])
 def options_handler(path=None):
     return jsonify({}), 200
 
@@ -32,6 +38,7 @@ emails: Dict[str, Dict] = {}
 user_sessions: Dict[str, str] = {}  # token -> user_id
 gym_info: Dict[str, Dict] = {}  # user_id -> gym preferences
 posts: List[Dict] = []  # List of all posts/sessions
+interest_requests: List[Dict] = []  # List of interest requests
 
 def hash_password(password: str) -> str:
     """Simple password hashing (use bcrypt in production)"""
@@ -173,12 +180,23 @@ def save_gym_info():
         if not focus or not experience:
             return jsonify({'error': 'Focus and experience are required'}), 400
         
-        gym_info[user_id] = {
+        # Get existing gym info or create new
+        if user_id not in gym_info:
+            gym_info[user_id] = {}
+        
+        gym_info[user_id].update({
             'user_id': user_id,
             'focus': focus,
             'experience': experience,
             'updated_at': datetime.now().isoformat()
-        }
+        })
+        
+        # Update bio if provided
+        bio = data.get('bio')
+        if bio is not None:
+            if len(bio) > 200:
+                return jsonify({'error': 'Bio must be 200 characters or less'}), 400
+            gym_info[user_id]['bio'] = bio
         
         return jsonify({
             'message': 'Gym info saved successfully',
@@ -215,6 +233,7 @@ def create_post():
             return jsonify({'error': 'Unauthorized'}), 401
         
         data = request.json
+        title = data.get('title')
         workout_type = data.get('workout_type')
         date_time = data.get('date_time')
         location = data.get('location')
@@ -224,7 +243,7 @@ def create_post():
         notes = data.get('notes')
         
         # Validation
-        if not all([workout_type, date_time, location, party_size, experience_level]):
+        if not all([title, workout_type, date_time, location, party_size, experience_level]):
             return jsonify({'error': 'Missing required fields'}), 400
         
         # Get user info
@@ -238,6 +257,7 @@ def create_post():
             'id': str(uuid.uuid4()),
             'user_id': user_id,
             'username': email,
+            'title': title,
             'workout_type': workout_type,
             'date_time': date_time,
             'location': location,
@@ -323,6 +343,51 @@ def get_post(post_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/posts/<post_id>', methods=['PUT'])
+def update_post(post_id):
+    """Update a post"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        global posts
+        post = next((p for p in posts if p['id'] == post_id), None)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+        
+        # Only allow user to edit their own posts
+        if post['user_id'] != user_id:
+            return jsonify({'error': 'Unauthorized to edit this post'}), 403
+        
+        data = request.json
+        if 'title' in data:
+            post['title'] = data['title']
+        if 'workout_type' in data:
+            post['workout_type'] = data['workout_type']
+        if 'date_time' in data:
+            post['date_time'] = data['date_time']
+        if 'location' in data:
+            post['location'] = data['location']
+        if 'party_size' in data:
+            post['party_size'] = data['party_size']
+        if 'experience_level' in data:
+            post['experience_level'] = data['experience_level']
+        if 'gender_preference' in data:
+            post['gender_preference'] = data['gender_preference']
+        if 'notes' in data:
+            post['notes'] = data['notes']
+        
+        post['updated_at'] = datetime.now().isoformat()
+        
+        return jsonify({
+            'message': 'Post updated successfully',
+            'post': post
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/posts/<post_id>', methods=['DELETE'])
 def delete_post(post_id):
     """Delete a post"""
@@ -374,17 +439,114 @@ def get_user():
             return jsonify({'error': 'Unauthorized'}), 401
         
         # Find user
-        email = None
+        user = None
         for u in emails.values():
             if u['id'] == user_id:
-                emails = u.copy()
-                del emails['password_hash']  # Don't return password
+                user = u.copy()
+                del user['password_hash']  # Don't return password
                 break
         
-        if not emails:
+        if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        return jsonify(emails), 200
+        # Add gym info and bio
+        user_gym_info = gym_info.get(user_id, {})
+        user['bio'] = user_gym_info.get('bio', '')
+        user['focus'] = user_gym_info.get('focus')
+        user['experience'] = user_gym_info.get('experience')
+        
+        return jsonify(user), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user', methods=['PUT'])
+def update_user():
+    """Update current user info"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        
+        # Find user
+        user = None
+        user_email = None
+        for email_addr, u in emails.items():
+            if u['id'] == user_id:
+                user = u
+                user_email = email_addr
+                break
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update allowed fields
+        if 'first_name' in data:
+            user['first_name'] = data['first_name']
+        if 'last_name' in data:
+            user['last_name'] = data['last_name']
+        if 'gender' in data:
+            user['gender'] = data['gender']
+        if 'age' in data:
+            user['age'] = data['age']
+        
+        # Update bio in gym_info
+        if 'bio' in data:
+            bio = data['bio']
+            if len(bio) > 200:
+                return jsonify({'error': 'Bio must be 200 characters or less'}), 400
+            if user_id not in gym_info:
+                gym_info[user_id] = {}
+            gym_info[user_id]['bio'] = bio
+        
+        user['updated_at'] = datetime.now().isoformat()
+        
+        return jsonify({
+            'message': 'User updated successfully',
+            'user': user
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user', methods=['DELETE'])
+def delete_account():
+    """Delete current user account"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Find and remove user
+        user_email = None
+        for email_addr, u in emails.items():
+            if u['id'] == user_id:
+                user_email = email_addr
+                break
+        
+        if user_email:
+            del emails[user_email]
+        
+        # Remove gym info
+        if user_id in gym_info:
+            del gym_info[user_id]
+        
+        # Remove user's posts
+        global posts
+        posts = [p for p in posts if p['user_id'] != user_id]
+        
+        # Remove user's interest requests
+        global interest_requests
+        interest_requests = [r for r in interest_requests if r['sender_id'] != user_id and r['receiver_id'] != user_id]
+        
+        # Remove user sessions
+        tokens_to_remove = [token for token, uid in user_sessions.items() if uid == user_id]
+        for token in tokens_to_remove:
+            del user_sessions[token]
+        
+        return jsonify({'message': 'Account deleted successfully'}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -403,6 +565,17 @@ def get_profiles():
         gender = request.args.get('gender')
         experience_level = request.args.get('experience_level')
         focus = request.args.get('focus')
+        age_min = request.args.get('age_min')
+        age_max = request.args.get('age_max')
+        same_gender_only = request.args.get('same_gender_only', 'false').lower() == 'true'
+        
+        # Get current user's gender for same-gender filter
+        current_user_gender = None
+        if same_gender_only:
+            for email_addr, user_data in emails.items():
+                if user_data['id'] == user_id:
+                    current_user_gender = user_data.get('gender')
+                    break
         
         # Build profiles from emails data (users stored by email)
         profiles_list = []
@@ -423,16 +596,29 @@ def get_profiles():
                 'age': user_data.get('age'),
                 'experience_level': user_gym_info.get('experience'),
                 'focus': user_gym_info.get('focus'),
-                'bio': '',  # TODO: Add bio field to user data
+                'bio': user_gym_info.get('bio', ''),
             }
             
             # Apply filters
-            if gender and profile['gender'] != gender:
+            if gender and profile['gender'] and profile['gender'] != gender:
                 continue
-            if experience_level and profile['experience_level'] != experience_level:
+            if same_gender_only and current_user_gender and profile['gender'] != current_user_gender:
                 continue
-            if focus and profile['focus'] != focus:
+            if experience_level and profile['experience_level'] and profile['experience_level'] != experience_level:
                 continue
+            if focus and profile['focus'] and profile['focus'] != focus:
+                continue
+            # Age range filter
+            if age_min or age_max:
+                try:
+                    profile_age = int(profile['age']) if profile['age'] else None
+                    if profile_age:
+                        if age_min and profile_age < int(age_min):
+                            continue
+                        if age_max and profile_age > int(age_max):
+                            continue
+                except:
+                    pass  # Skip age filter if age is not a number
             
             profiles_list.append(profile)
         
@@ -474,7 +660,7 @@ def get_profile(profile_id):
             'age': user.get('age'),
             'experience_level': user_gym_info.get('experience'),
             'focus': user_gym_info.get('focus'),
-            'bio': '',  # TODO: Add bio field
+            'bio': user_gym_info.get('bio', ''),
         }
         
         return jsonify(profile), 200
@@ -496,11 +682,167 @@ def express_interest():
         if not profile_id:
             return jsonify({'error': 'Profile ID required'}), 400
         
-        # TODO: Store interest requests in database
-        # For now, just return success
+        if profile_id == user_id:
+            return jsonify({'error': 'Cannot express interest in your own profile'}), 400
+        
+        # Check if request already exists
+        existing = next((r for r in interest_requests if r['sender_id'] == user_id and r['receiver_id'] == profile_id and r['type'] == 'profile'), None)
+        if existing:
+            return jsonify({'error': 'Interest already expressed'}), 409
+        
+        # Create interest request
+        request_id = str(uuid.uuid4())
+        interest_request = {
+            'id': request_id,
+            'sender_id': user_id,
+            'receiver_id': profile_id,
+            'type': 'profile',  # 'profile' or 'post'
+            'status': 'pending',
+            'created_at': datetime.now().isoformat()
+        }
+        interest_requests.append(interest_request)
+        
         return jsonify({
             'message': 'Interest expressed successfully',
-            'profile_id': profile_id
+            'request_id': request_id,
+            'status': 'pending'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/posts/<post_id>/request', methods=['POST'])
+def request_to_join():
+    """Request to join a gym session"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get post_id from URL path parameter
+        post_id = request.view_args.get('post_id')
+        if not post_id:
+            # Fallback: try to extract from request path
+            path_parts = request.path.split('/')
+            if 'posts' in path_parts:
+                post_idx = path_parts.index('posts')
+                if post_idx + 1 < len(path_parts):
+                    post_id = path_parts[post_idx + 1]
+        
+        post = next((p for p in posts if p['id'] == post_id), None)
+        
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+        
+        if post['user_id'] == user_id:
+            return jsonify({'error': 'Cannot request to join your own post'}), 400
+        
+        # Check if request already exists (check by post_id in the request)
+        existing = next((r for r in interest_requests if r['sender_id'] == user_id and r.get('post_id') == post_id and r['type'] == 'post'), None)
+        if existing:
+            return jsonify({'error': 'Request already sent'}), 409
+        
+        # Create join request
+        request_id = str(uuid.uuid4())
+        interest_request = {
+            'id': request_id,
+            'sender_id': user_id,
+            'receiver_id': post['user_id'],
+            'post_id': post_id,
+            'type': 'post',
+            'status': 'pending',
+            'created_at': datetime.now().isoformat()
+        }
+        interest_requests.append(interest_request)
+        
+        return jsonify({
+            'message': 'Request to join sent successfully',
+            'request_id': request_id,
+            'status': 'pending'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/requests', methods=['GET'])
+def get_requests():
+    """Get interest/join requests for current user"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get requests where user is the receiver
+        received_requests = [r for r in interest_requests if r['receiver_id'] == user_id and r['status'] == 'pending']
+        
+        # Get requests where user is the sender
+        sent_requests = [r for r in interest_requests if r['sender_id'] == user_id]
+        
+        return jsonify({
+            'received': received_requests,
+            'sent': sent_requests
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/requests/<request_id>/respond', methods=['POST'])
+def respond_to_request():
+    """Respond to an interest/join request (accept or reject)"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        response = data.get('response')  # 'accept' or 'reject'
+        
+        if response not in ['accept', 'reject']:
+            return jsonify({'error': 'Response must be "accept" or "reject"'}), 400
+        
+        # Get request_id from URL path parameter
+        request_id = request.view_args.get('request_id')
+        if not request_id:
+            # Fallback: try to extract from request path
+            path_parts = request.path.split('/')
+            if 'requests' in path_parts:
+                req_idx = path_parts.index('requests')
+                if req_idx + 1 < len(path_parts):
+                    request_id = path_parts[req_idx + 1]
+        
+        interest_request = next((r for r in interest_requests if r['id'] == request_id), None)
+        
+        if not interest_request:
+            return jsonify({'error': 'Request not found'}), 404
+        
+        if interest_request['receiver_id'] != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        if interest_request['status'] != 'pending':
+            return jsonify({'error': 'Request already responded to'}), 400
+        
+        # Update request status
+        interest_request['status'] = 'accepted' if response == 'accept' else 'rejected'
+        interest_request['responded_at'] = datetime.now().isoformat()
+        
+        # TODO: Send email notification if accepted
+        if response == 'accept':
+            # Get sender and receiver emails for notification
+            sender_email = None
+            receiver_email = None
+            for u in emails.values():
+                if u['id'] == interest_request['sender_id']:
+                    sender_email = u['email']
+                if u['id'] == interest_request['receiver_id']:
+                    receiver_email = u['email']
+            
+            # TODO: Implement email sending (SendGrid, Resend, etc.)
+            # For MVP, just log that notification would be sent
+            print(f"TODO: Send email to {sender_email} and {receiver_email} about match")
+        
+        return jsonify({
+            'message': f'Request {response}ed successfully',
+            'request': interest_request
         }), 200
         
     except Exception as e:
