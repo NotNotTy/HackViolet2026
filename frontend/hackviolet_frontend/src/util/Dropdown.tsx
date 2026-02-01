@@ -1,13 +1,12 @@
 import "./Dropdown.css";
 
 type DropdownProps = {
-  label: string;
   options: string[];
   value: string;
   onChange: (value: string) => void;
 };
 
-function Dropdown({ label, options, value, onChange }: DropdownProps) {
+function Dropdown({options, value, onChange }: DropdownProps) {
   return (
     <div className="input-group">
 

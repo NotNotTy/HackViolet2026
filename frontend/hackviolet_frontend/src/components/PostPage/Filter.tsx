@@ -1,19 +1,14 @@
-import "./Banner.css"
+
 import logo from "../../app/assets/liftLogo.png"
-import { Page } from "../../types/page";
-interface Banner {
-    setPage: (page: Page) => void;
+interface Filter {
     text: string;
 }
-function Banner({setPage, text} : Banner) {
+function Banner({text} : Filter) {
     return (
         <>
         <div className="banner">
             <div className="banner-left">
-            <button onClick={() => setPage(Page.Home)}>
-                    <img src={logo} alt="Company Logo"></img>
-                </button>
-                
+                <img src={logo} alt="Company Logo"></img>
             </div>
             <div className="banner-center">
                 <h2>{text}</h2>

@@ -13,7 +13,7 @@ interface HomePage {
 function HomePage({setPage} : HomePage) {
   return (
     <>
-      <Banner logo_path='temp' text='Lift Link'></Banner>
+      <Banner text='Lift Link' setPage={setPage}></Banner>
       <MainBlock text="Lifting together. Always."
        buttonText='Get Started' 
        setPage={setPage}></MainBlock>

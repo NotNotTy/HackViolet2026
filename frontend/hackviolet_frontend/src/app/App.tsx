@@ -3,7 +3,7 @@ import HomePage from './Pages/HomePage.tsx'
 import LoginPage from './Pages/LoginPage.tsx'
 import CreationPage from './Pages/CreationPage.tsx'
 import GymInfoPage from './Pages/GymInfoPage.tsx'
-import Nav from './Nav.tsx'
+import PostPage from './Pages/PostPage.tsx'
 import './App.css'
 
 import { Page } from "../types/page.ts";
@@ -38,6 +38,12 @@ function App() {
   else if (page === Page.GymInfo) {
     return <>
       <GymInfoPage setPage={setPage}></GymInfoPage>
+    </>
+  }
+
+  else if (page === Page.PostPage) {
+    return <>
+      <PostPage setPage={setPage}></PostPage>
     </>
   }
 

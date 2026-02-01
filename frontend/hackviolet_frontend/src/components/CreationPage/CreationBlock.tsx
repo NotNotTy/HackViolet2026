@@ -32,7 +32,7 @@ function CreationBlock({buttonText, setPage} : CreationBlock) {
                 <div className="rightblock">
                     <div className="input-group">
                         <p> Gender </p>
-                        <Dropdown label="Role" options={["Male","Female","Prefer not to answer"]} value={role} onChange={setRole}/>
+                        <Dropdown options={["Male","Female","Prefer not to answer"]} value={role} onChange={setRole}/>
                     </div>
                     <div className="input-group">
                         <p> Age </p>

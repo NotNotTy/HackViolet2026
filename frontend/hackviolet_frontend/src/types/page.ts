@@ -3,5 +3,6 @@ export enum Page {
     About = "about",
     Login = "login",
     CreateAccount = "create account",
-    GymInfo = "gym info"
+    GymInfo = "gym info",
+    PostPage = "post"
   }
