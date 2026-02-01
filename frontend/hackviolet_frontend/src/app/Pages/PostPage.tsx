@@ -2,22 +2,32 @@
  * PostPage
  */
 import Banner from '../../components/HomePage/Banner.tsx'
-import Filter from '../../components/PostPage/Filter.tsx'
-import CreationBlock from '../../components/CreationPage/CreationBlock.tsx'
+import PostCreation from '../../components/PostPage/PostCreation.tsx'
+import PostList from '../../components/PostPage/PostList.tsx'
 import { Page } from '../../types/page.ts'
+import { useState } from 'react'
 import '../App.css'
-interface FilterPage {
+
+interface PostPage {
   setPage: (page: Page) => void;
 }
-function LoginPage({setPage} : FilterPage) {
+
+function PostPage({setPage} : PostPage) {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handlePostCreated = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <>
       <Banner setPage = {setPage} text='Lift Link'></Banner>
-      <Filter text='Temp'>
-      </Filter>
-      <CreationBlock buttonText='Submit' setPage={setPage}></CreationBlock>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <PostCreation onPostCreated={handlePostCreated} />
+        <PostList refreshTrigger={refreshTrigger} />
+      </div>
     </>
   )
 }
 
-export default LoginPage
+export default PostPage

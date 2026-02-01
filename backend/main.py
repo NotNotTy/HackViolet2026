@@ -1,1 +1,403 @@
-print("Hello World")
+from flask import Flask, request, jsonify
+from datetime import datetime
+import hashlib
+import uuid
+from typing import Dict, List, Optional
+
+app = Flask(__name__)
+
+# Add CORS headers to all responses (use set() to avoid duplicates)
+@app.after_request
+def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Max-Age'] = '3600'
+    return response
+
+# Handle OPTIONS preflight requests explicitly for all API routes
+# Headers will be added by after_request, so we just need to return empty response
+@app.route('/api/register', methods=['OPTIONS'])
+@app.route('/api/login', methods=['OPTIONS'])
+@app.route('/api/logout', methods=['OPTIONS'])
+@app.route('/api/gym-info', methods=['OPTIONS'])
+@app.route('/api/posts', methods=['OPTIONS'])
+@app.route('/api/posts/<path:path>', methods=['OPTIONS'])
+@app.route('/api/user', methods=['OPTIONS'])
+def options_handler(path=None):
+    return jsonify({}), 200
+
+# In-memory storage (replace with database in production)
+users: Dict[str, Dict] = {}
+user_sessions: Dict[str, str] = {}  # token -> user_id
+gym_info: Dict[str, Dict] = {}  # user_id -> gym preferences
+posts: List[Dict] = []  # List of all posts/sessions
+
+def hash_password(password: str) -> str:
+    """Simple password hashing (use bcrypt in production)"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def generate_token() -> str:
+    """Generate a simple session token"""
+    return str(uuid.uuid4())
+
+# ==================== AUTHENTICATION ENDPOINTS ====================
+
+@app.route('/api/register', methods=['POST', 'OPTIONS'])
+def register():
+    """Register a new user"""
+    # Handle OPTIONS preflight (headers added by after_request)
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        gender = data.get('gender')
+        age = data.get('age')
+        
+        # Validation
+        if not all([username, password, first_name, last_name, email]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Check if user already exists
+        if username in users:
+            return jsonify({'error': 'Username already exists'}), 409
+        
+        # Create user
+        user_id = str(uuid.uuid4())
+        users[username] = {
+            'id': user_id,
+            'username': username,
+            'password_hash': hash_password(password),
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'gender': gender,
+            'age': age,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Generate session token
+        token = generate_token()
+        user_sessions[token] = user_id
+        
+        return jsonify({
+            'message': 'User registered successfully',
+            'token': token,
+            'user_id': user_id,
+            'username': username
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/login', methods=['POST', 'OPTIONS'])
+def login():
+    """Login user"""
+    # Handle OPTIONS preflight (headers added by after_request)
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'error': 'Username and password required'}), 400
+        
+        # Check if user exists
+        if username not in users:
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        user = users[username]
+        password_hash = hash_password(password)
+        
+        # Verify password
+        if user['password_hash'] != password_hash:
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        # Generate session token
+        token = generate_token()
+        user_sessions[token] = user['id']
+        
+        return jsonify({
+            'message': 'Login successful',
+            'token': token,
+            'user_id': user['id'],
+            'username': username
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Logout user"""
+    try:
+        token = request.headers.get('Authorization')
+        if token and token in user_sessions:
+            del user_sessions[token]
+        return jsonify({'message': 'Logged out successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def get_user_from_token() -> Optional[str]:
+    """Helper to get user_id from token"""
+    token = request.headers.get('Authorization')
+    if token and token in user_sessions:
+        return user_sessions[token]
+    return None
+
+# ==================== GYM INFO ENDPOINTS ====================
+
+@app.route('/api/gym-info', methods=['POST'])
+def save_gym_info():
+    """Save user's gym preferences"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        focus = data.get('focus')
+        experience = data.get('experience')
+        
+        if not focus or not experience:
+            return jsonify({'error': 'Focus and experience are required'}), 400
+        
+        gym_info[user_id] = {
+            'user_id': user_id,
+            'focus': focus,
+            'experience': experience,
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'message': 'Gym info saved successfully',
+            'gym_info': gym_info[user_id]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/gym-info', methods=['GET'])
+def get_gym_info():
+    """Get user's gym preferences"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        if user_id in gym_info:
+            return jsonify(gym_info[user_id]), 200
+        else:
+            return jsonify({'message': 'No gym info found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== POSTS/SESSIONS ENDPOINTS ====================
+
+@app.route('/api/posts', methods=['POST'])
+def create_post():
+    """Create a new gym session post"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json
+        workout_type = data.get('workout_type')
+        date_time = data.get('date_time')
+        location = data.get('location')
+        party_size = data.get('party_size')
+        experience_level = data.get('experience_level')
+        gender_preference = data.get('gender_preference')
+        notes = data.get('notes')
+        
+        # Validation
+        if not all([workout_type, date_time, location, party_size, experience_level]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Get user info
+        username = None
+        for u in users.values():
+            if u['id'] == user_id:
+                username = u['username']
+                break
+        
+        post = {
+            'id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'username': username,
+            'workout_type': workout_type,
+            'date_time': date_time,
+            'location': location,
+            'party_size': party_size,
+            'experience_level': experience_level,
+            'gender_preference': gender_preference,
+            'notes': notes,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        posts.append(post)
+        
+        return jsonify({
+            'message': 'Post created successfully',
+            'post': post
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/posts', methods=['GET'])
+def get_posts():
+    """Get all posts with optional filtering"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Get filter parameters
+        workout_type = request.args.get('workout_type')
+        location = request.args.get('location')
+        experience_level = request.args.get('experience_level')
+        gender_preference = request.args.get('gender_preference')
+        party_size = request.args.get('party_size')
+        
+        # Filter posts
+        filtered_posts = posts.copy()
+        
+        if workout_type:
+            filtered_posts = [p for p in filtered_posts if p['workout_type'].lower() == workout_type.lower()]
+        if location:
+            filtered_posts = [p for p in filtered_posts if location.lower() in p['location'].lower()]
+        if experience_level:
+            filtered_posts = [p for p in filtered_posts if p['experience_level'].lower() == experience_level.lower()]
+        if gender_preference:
+            filtered_posts = [p for p in filtered_posts if p.get('gender_preference', '').lower() == gender_preference.lower() or not p.get('gender_preference')]
+        if party_size:
+            filtered_posts = [p for p in filtered_posts if p['party_size'].lower() == party_size.lower()]
+        
+        # Filter out expired posts (optional - you might want to keep them)
+        now = datetime.now()
+        active_posts = []
+        for post in filtered_posts:
+            try:
+                post_time = datetime.fromisoformat(post['date_time'].replace('Z', '+00:00'))
+                if post_time > now:
+                    active_posts.append(post)
+            except:
+                active_posts.append(post)  # Include if date parsing fails
+        
+        return jsonify({
+            'posts': active_posts,
+            'count': len(active_posts)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/posts/<post_id>', methods=['GET'])
+def get_post(post_id):
+    """Get a specific post by ID"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        post = next((p for p in posts if p['id'] == post_id), None)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+        
+        return jsonify(post), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/posts/<post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    """Delete a post"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        global posts
+        post = next((p for p in posts if p['id'] == post_id), None)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+        
+        # Only allow user to delete their own posts
+        if post['user_id'] != user_id:
+            return jsonify({'error': 'Unauthorized to delete this post'}), 403
+        
+        posts = [p for p in posts if p['id'] != post_id]
+        return jsonify({'message': 'Post deleted successfully'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/posts/my-posts', methods=['GET'])
+def get_my_posts():
+    """Get current user's posts"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        my_posts = [p for p in posts if p['user_id'] == user_id]
+        return jsonify({
+            'posts': my_posts,
+            'count': len(my_posts)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== USER ENDPOINTS ====================
+
+@app.route('/api/user', methods=['GET'])
+def get_user():
+    """Get current user info"""
+    try:
+        user_id = get_user_from_token()
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Find user
+        user = None
+        for u in users.values():
+            if u['id'] == user_id:
+                user = u.copy()
+                del user['password_hash']  # Don't return password
+                break
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify(user), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== HEALTH CHECK ====================
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'LiftLink API is running'
+    }), 200
+
+if __name__ == '__main__':
+    print("Starting LiftLink Backend Server...")
+    print("API endpoints available at http://localhost:5001/api/")
+    app.run(debug=True, port=5001)
